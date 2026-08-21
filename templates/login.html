@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Đăng nhập{% endblock %}
+{% block content %}
+<main class="auth-page">
+  <div class="auth-card">
+    <div class="big-icon">📖</div>
+    <h1>Đăng nhập</h1>
+    <p>Tài khoản do quản trị viên cấp.</p>
+    <form method="post">
+      <label>Tài khoản</label><input name="username" required>
+      <label>Mật khẩu</label><input name="password" type="password" required>
+      <button class="primary-btn full">Đăng nhập</button>
+    </form>
+    <div class="admin-note">Tài khoản quản trị ban đầu: <b>admin</b> / <b>Admin@123</b></div>
+  </div>
+</main>
+{% endblock %}

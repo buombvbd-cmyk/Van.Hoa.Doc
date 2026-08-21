@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Văn Hóa Đọc{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="{{ url_for('home') }}">📖 <span>VĂN HÓA ĐỌC</span><small>Mỗi trang sách · Một điều ý nghĩa</small></a>
+  <nav>
+    <a href="{{ url_for('home') }}">🏠 Trang chủ</a>
+    {% if session.get('user_id') %}
+      <a href="{{ url_for('share') }}">➕ Chia sẻ</a>
+      {% if session.get('role') == 'admin' %}<a href="{{ url_for('admin') }}">⚙️ Quản trị</a>{% endif %}
+      <a class="logout" href="{{ url_for('logout') }}">Đăng xuất</a>
+    {% else %}
+      <a class="logout" href="{{ url_for('login') }}">Đăng nhập</a>
+    {% endif %}
+  </nav>
+</header>
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-wrap">
+      {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+{% block content %}{% endblock %}
+</body>
+</html>

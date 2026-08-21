@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Quản trị{% endblock %}
+{% block content %}
+<main class="container">
+  <h1>Bảng điều khiển</h1>
+  <div class="stats">
+    <div><b>{{ stats.members }}</b><span>Thành viên</span></div>
+    <div><b>{{ stats.posts }}</b><span>Bài chia sẻ</span></div>
+    <div><b>{{ stats.likes }}</b><span>Lượt thích</span></div>
+    <div><b>{{ stats.comments }}</b><span>Bình luận</span></div>
+  </div>
+
+  <div class="admin-grid">
+    <section class="form-card">
+      <h2>👥 Cấp tài khoản</h2>
+      <form method="post">
+        <input name="full_name" placeholder="Họ và tên" required>
+        <input name="username" placeholder="Tên tài khoản" required>
+        <input name="password" placeholder="Mật khẩu" required>
+        <button class="primary-btn full">+ Tạo tài khoản</button>
+      </form>
+    </section>
+
+    <section class="form-card">
+      <h2>👥 Thành viên</h2>
+      <div class="table-wrap"><table>
+        <tr><th>Họ tên</th><th>Tài khoản</th><th>Quyền</th></tr>
+        {% for u in users %}<tr><td>{{u.full_name}}</td><td>{{u.username}}</td><td>{{u.role}}</td></tr>{% endfor %}
+      </table></div>
+    </section>
+  </div>
+
+  <section class="form-card">
+    <h2>📝 Bài đăng</h2>
+    <div class="table-wrap"><table>
+      <tr><th>Sách</th><th>Người đăng</th><th>Thao tác</th></tr>
+      {% for p in posts %}
+      <tr><td>{{p.book_title}}</td><td>{{p.full_name}}</td><td>
+        <form method="post" action="{{url_for('delete_post',post_id=p.id)}}" onsubmit="return confirm('Xóa bài này?')">
+          <button class="delete-btn">Xóa</button>
+        </form>
+      </td></tr>
+      {% endfor %}
+    </table></div>
+  </section>
+</main>
+{% endblock %}

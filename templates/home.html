@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Văn Hóa Đọc{% endblock %}
+{% block content %}
+<main class="container">
+  <section class="hero">
+    <div>
+      <div class="eyebrow">🌱 CỘNG ĐỒNG ĐỌC SÁCH</div>
+      <h1>Mỗi trang sách<br><em>một điều để nhớ.</em></h1>
+      <p>Chia sẻ một trang sách khiến bạn dừng lại, suy nghĩ và muốn lan tỏa.</p>
+      {% if session.get('user_id') %}
+        <a class="primary-btn" href="{{ url_for('share') }}">📸 Chia sẻ trang sách</a>
+      {% else %}
+        <a class="primary-btn" href="{{ url_for('login') }}">🔐 Đăng nhập để chia sẻ</a>
+      {% endif %}
+    </div>
+    <div class="hero-book">📖<span>🌿</span></div>
+  </section>
+
+  <div class="feed-title">
+    <div><div class="eyebrow">BẢNG TIN ĐỌC</div><h2>Khám phá trang sách</h2></div>
+    <form class="search" method="get">
+      <input name="q" value="{{ q }}" placeholder="🔍 Tìm sách, tác giả, người chia sẻ...">
+      <button>Tìm</button>
+    </form>
+  </div>
+  <div class="hint">⬍ Vuốt lên / xuống để chuyển bài · 💬 bình luận mở ngay trên bài</div>
+
+  <section class="feed" id="feed">
+  {% for p in posts %}
+    <article class="post-card" id="post-{{ p.id }}">
+      <div class="media">
+        {% if p.image %}
+          <img src="{{ url_for('uploads', name=p.image) }}" alt="Trang sách">
+        {% elif p.video %}
+          <video class="post-video" src="{{ url_for('uploads', name=p.video) }}" controls loop playsinline></video>
+        {% else %}
+          <div class="no-media">📖</div>
+        {% endif %}
+      </div>
+
+      <div class="shade"></div>
+
+      <div class="post-info">
+        <div class="author">👤 {{ p.full_name }}</div>
+        <h3>📚 {{ p.book_title }}</h3>
+        {% if p.author %}<div class="book-author">Tác giả: {{ p.author }}</div>{% endif %}
+        <div class="impression"><b>💭 Điều tôi ấn tượng</b><p>{{ p.impression }}</p></div>
+        {% if p.url %}<a class="shared-link" href="{{ p.url }}" target="_blank" rel="noopener">🔗 Mở đường dẫn được chia sẻ</a>{% endif %}
+        {% if p.file_name %}<a class="shared-link" href="{{ url_for('uploads', name=p.file_name) }}" target="_blank">📎 Mở file đính kèm</a>{% endif %}
+      </div>
+
+      <div class="post-actions">
+        <form method="post" action="{{ url_for('like', post_id=p.id) }}">
+          <button class="round-action" title="Thích">❤️<span>{{ p.like_count }}</span></button>
+        </form>
+        <button class="round-action comment-open" data-post="{{ p.id }}" title="Bình luận">💬<span>{{ p.comment_count }}</span></button>
+      </div>
+
+      <aside class="comment-drawer" data-drawer="{{ p.id }}">
+        <div class="drawer-head"><b>💬 Bình luận</b><button type="button" class="drawer-close">✕</button></div>
+        <div class="comment-list">
+          {% for c in comments[p.id] %}
+            <div class="comment-item"><b>{{ c.full_name }}</b><div>{{ c.content }}</div><small>{{ c.created_at }}</small></div>
+          {% else %}
+            <div class="empty-comments">Chưa có bình luận. Hãy là người đầu tiên!</div>
+          {% endfor %}
+        </div>
+        {% if session.get('user_id') %}
+          <form class="comment-form" method="post" action="{{ url_for('comment', post_id=p.id) }}">
+            <input name="content" autocomplete="off" required placeholder="Viết bình luận...">
+            <button>Gửi</button>
+          </form>
+        {% else %}
+          <div class="login-comment">Bạn cần <a href="{{ url_for('login') }}">đăng nhập</a> để bình luận.</div>
+        {% endif %}
+      </aside>
+    </article>
+  {% else %}
+    <div class="empty-feed"><div>📖</div><h2>Chưa có bài chia sẻ</h2><p>Hãy là người đầu tiên chia sẻ một trang sách.</p></div>
+  {% endfor %}
+  </section>
+</main>
+
+<script>
+document.querySelectorAll('.post-card').forEach(card => {
+  const drawer = card.querySelector('.comment-drawer');
+  const open = card.querySelector('.comment-open');
+  const close = card.querySelector('.drawer-close');
+
+  open?.addEventListener('click', () => {
+    drawer.classList.add('open');
+    card.classList.add('drawer-active');
+  });
+  close?.addEventListener('click', () => {
+    drawer.classList.remove('open');
+    card.classList.remove('drawer-active');
+  });
+  drawer?.addEventListener('click', e => e.stopPropagation());
+});
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    const video = entry.target.querySelector('.post-video');
+    if (!video) return;
+    if (entry.isIntersecting) video.play().catch(()=>{});
+    else video.pause();
+  });
+}, {threshold: 0.65});
+
+document.querySelectorAll('.post-card').forEach(card => observer.observe(card));
+</script>
+{% endblock %}

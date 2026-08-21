@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Chia sẻ trang sách{% endblock %}
+{% block content %}
+<main class="container narrow">
+  <div class="form-card">
+    <div class="eyebrow">📚 CHIA SẺ VỚI CỘNG ĐỒNG</div>
+    <h1>Chia sẻ một trang sách</h1>
+    <p class="muted">Bạn có thể chụp 1 trang sách, tải ảnh/video/file hoặc thêm đường dẫn.</p>
+    <form method="post" enctype="multipart/form-data">
+      <label>Tên sách *</label><input name="book_title" required placeholder="Ví dụ: Đắc Nhân Tâm">
+      <label>Tác giả</label><input name="author" placeholder="Tên tác giả">
+      <label>📸 Ảnh trang sách</label><input type="file" name="image" accept="image/*">
+      <label>🎬 Video</label><input type="file" name="video" accept="video/*">
+      <label>📎 File</label><input type="file" name="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.txt">
+      <label>🔗 URL</label><input type="url" name="url" placeholder="https://...">
+      <label>💭 Điều tôi ấn tượng *</label><textarea name="impression" rows="7" required placeholder="Điều gì trong trang sách khiến bạn ấn tượng?"></textarea>
+      <button class="primary-btn">🌿 Đăng bài chia sẻ</button>
+    </form>
+  </div>
+</main>
+{% endblock %}
