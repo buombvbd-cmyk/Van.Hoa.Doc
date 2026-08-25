@@ -1,6 +1,12 @@
-services:
+   services:
   - type: web
     name: van-hoa-doc
     runtime: python
+    plan: starter
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
+
+    disk:
+      name: van-hoa-doc-data
+      mountPath: /var/data
+      sizeGB: 10
