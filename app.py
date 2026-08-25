@@ -6,8 +6,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "database.db")
-UPLOAD_DIR = os.path.join(BASE_DIR, "static", "uploads")
+
+DATA_DIR = "/var/data"
+DB_PATH = os.path.join(DATA_DIR, "database.db")
+UPLOAD_DIR = os.path.join(DATA_DIR, "uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = Flask(__name__)
