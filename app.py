@@ -107,12 +107,12 @@ def allowed_file(filename, extensions):
     if "." not in filename:
         return False
 
-    ext = filename.rsplit(
+    extension = filename.rsplit(
         ".",
         1
     )[1].lower()
 
-    return ext in extensions
+    return extension in extensions
 
 
 def save_upload(file_obj, extensions):
@@ -220,7 +220,7 @@ def home():
     ).strip()
 
     # -----------------------------------------------------
-    # POSTS
+    # CHỈ LẤY BÀI ĐÃ DUYỆT
     # -----------------------------------------------------
 
     try:
@@ -229,6 +229,10 @@ def home():
             supabase
             .table("posts")
             .select("*")
+            .eq(
+                "status",
+                "approved"
+            )
             .order(
                 "id",
                 desc=True
@@ -241,7 +245,7 @@ def home():
     except Exception as error:
 
         print(
-            "POSTS ERROR:",
+            "HOME POSTS ERROR:",
             error
         )
 
@@ -269,7 +273,7 @@ def home():
     except Exception as error:
 
         print(
-            "USERS ERROR:",
+            "HOME USERS ERROR:",
             error
         )
 
@@ -299,34 +303,39 @@ def home():
                 {}
             )
 
-            text = " ".join([
+            searchable_text = " ".join([
+
                 str(
                     post.get(
                         "book_title",
                         ""
                     )
                 ),
+
                 str(
                     post.get(
                         "author",
                         ""
                     )
                 ),
+
                 str(
                     post.get(
                         "impression",
                         ""
                     )
                 ),
+
                 str(
                     user.get(
                         "full_name",
                         ""
                     )
                 ),
+
             ]).lower()
 
-            if keyword in text:
+            if keyword in searchable_text:
 
                 filtered_posts.append(
                     post
@@ -352,12 +361,7 @@ def home():
 
         likes = result.data or []
 
-    except Exception as error:
-
-        print(
-            "LIKES ERROR:",
-            error
-        )
+    except Exception:
 
         likes = []
 
@@ -381,12 +385,7 @@ def home():
 
         all_comments = result.data or []
 
-    except Exception as error:
-
-        print(
-            "COMMENTS ERROR:",
-            error
-        )
+    except Exception:
 
         all_comments = []
 
@@ -521,9 +520,9 @@ def login():
             user = users[0]
 
 
-            # -------------------------------------------------
-            # KIỂM TRA KHÓA
-            # -------------------------------------------------
+            # ---------------------------------------------
+            # KIỂM TRA TÀI KHOẢN KHÓA
+            # ---------------------------------------------
 
             if user.get(
                 "status"
@@ -539,28 +538,21 @@ def login():
                 )
 
 
-            # -------------------------------------------------
+            # ---------------------------------------------
             # KIỂM TRA MẬT KHẨU
-            # -------------------------------------------------
+            # ---------------------------------------------
 
             try:
 
-                password_ok = (
-                    check_password_hash(
-                        user.get(
-                            "password",
-                            ""
-                        ),
-                        password
-                    )
+                password_ok = check_password_hash(
+                    user.get(
+                        "password",
+                        ""
+                    ),
+                    password
                 )
 
-            except Exception as error:
-
-                print(
-                    "PASSWORD ERROR:",
-                    error
-                )
+            except Exception:
 
                 password_ok = False
 
@@ -577,9 +569,9 @@ def login():
                 )
 
 
-            # -------------------------------------------------
+            # ---------------------------------------------
             # SESSION
-            # -------------------------------------------------
+            # ---------------------------------------------
 
             session.clear()
 
@@ -619,6 +611,7 @@ def login():
                 url_for("home")
             )
 
+
         except Exception as error:
 
             print(
@@ -627,9 +620,10 @@ def login():
             )
 
             flash(
-                "Không thể đăng nhập. Vui lòng thử lại.",
+                "Không thể đăng nhập.",
                 "error"
             )
+
 
     return render_template(
         "login.html"
@@ -726,6 +720,10 @@ def share():
             )
 
 
+            # ---------------------------------------------
+            # BÀI MỚI LUÔN Ở TRẠNG THÁI CHỜ DUYỆT
+            # ---------------------------------------------
+
             supabase.table(
                 "posts"
             ).insert({
@@ -754,11 +752,14 @@ def share():
                 "url":
                     external_url,
 
+                "status":
+                    "pending",
+
             }).execute()
 
 
             flash(
-                "Đã chia sẻ trang sách thành công.",
+                "Bài đã được gửi và đang chờ quản trị viên duyệt.",
                 "success"
             )
 
@@ -855,7 +856,7 @@ def like(post_id):
 
 
 # =========================================================
-# COMMENT
+# BÌNH LUẬN
 # =========================================================
 
 @app.post(
@@ -904,7 +905,7 @@ def comment(post_id):
 
 
 # =========================================================
-# QUẢN TRỊ
+# ADMIN
 # =========================================================
 
 @app.route(
@@ -1017,7 +1018,7 @@ def admin():
                             class_name,
 
                         "status":
-                            "active",
+                            "active"
 
                     }).execute()
 
@@ -1042,7 +1043,7 @@ def admin():
 
 
     # -----------------------------------------------------
-    # USERS
+    # DANH SÁCH USER
     # -----------------------------------------------------
 
     try:
@@ -1063,18 +1064,13 @@ def admin():
 
         users = result.data or []
 
-    except Exception as error:
-
-        print(
-            "ADMIN USERS ERROR:",
-            error
-        )
+    except Exception:
 
         users = []
 
 
     # -----------------------------------------------------
-    # POSTS
+    # DANH SÁCH POSTS
     # -----------------------------------------------------
 
     try:
@@ -1083,7 +1079,8 @@ def admin():
             supabase
             .table("posts")
             .select(
-                "id,book_title,created_at,user_id"
+                "id,book_title,created_at,"
+                "user_id,status,author"
             )
             .order(
                 "id",
@@ -1094,14 +1091,31 @@ def admin():
 
         posts = result.data or []
 
-    except Exception as error:
-
-        print(
-            "ADMIN POSTS ERROR:",
-            error
-        )
+    except Exception:
 
         posts = []
+
+
+    # -----------------------------------------------------
+    # GÁN TÊN NGƯỜI ĐĂNG
+    # -----------------------------------------------------
+
+    user_map = {
+        user["id"]: user
+        for user in users
+    }
+
+    for post in posts:
+
+        user = user_map.get(
+            post.get("user_id"),
+            {}
+        )
+
+        post["full_name"] = user.get(
+            "full_name",
+            "Thành viên"
+        )
 
 
     # -----------------------------------------------------
@@ -1184,6 +1198,21 @@ def admin():
         comment_count = 0
 
 
+    # -----------------------------------------------------
+    # BÀI CHỜ DUYỆT
+    # -----------------------------------------------------
+
+    pending_posts = [
+
+        post
+
+        for post in posts
+
+        if post.get("status") == "pending"
+
+    ]
+
+
     stats = {
 
         "members":
@@ -1198,6 +1227,9 @@ def admin():
         "comments":
             comment_count,
 
+        "pending":
+            len(pending_posts),
+
     }
 
 
@@ -1205,6 +1237,7 @@ def admin():
         "admin.html",
         users=users,
         posts=posts,
+        pending_posts=pending_posts,
         stats=stats
     )
 
@@ -1220,7 +1253,6 @@ def admin():
 @admin_required
 def toggle_user(user_id):
 
-    # Không cho admin tự khóa mình
     if user_id == session.get(
         "user_id"
     ):
@@ -1376,30 +1408,29 @@ def delete_user(user_id):
         users = result.data or []
 
 
-        if users:
+        if users and users[0].get(
+            "role"
+        ) == "admin":
 
-            if users[0].get(
-                "role"
-            ) == "admin":
+            flash(
+                "Không thể xóa tài khoản quản trị.",
+                "error"
+            )
 
-                flash(
-                    "Không thể xóa tài khoản quản trị.",
-                    "error"
-                )
+        else:
 
-            else:
+            supabase.table(
+                "users"
+            ).delete().eq(
+                "id",
+                user_id
+            ).execute()
 
-                supabase.table(
-                    "users"
-                ).delete().eq(
-                    "id",
-                    user_id
-                ).execute()
+            flash(
+                "Đã xóa tài khoản.",
+                "success"
+            )
 
-                flash(
-                    "Đã xóa tài khoản.",
-                    "success"
-                )
 
     except Exception as error:
 
@@ -1410,6 +1441,106 @@ def delete_user(user_id):
 
         flash(
             "Không thể xóa tài khoản.",
+            "error"
+        )
+
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# DUYỆT BÀI
+# =========================================================
+
+@app.post(
+    "/admin/post/<int:post_id>/approve"
+)
+@login_required
+@admin_required
+def approve_post(post_id):
+
+    try:
+
+        supabase.table(
+            "posts"
+        ).update({
+
+            "status":
+                "approved"
+
+        }).eq(
+            "id",
+            post_id
+        ).execute()
+
+
+        flash(
+            "Đã duyệt bài viết.",
+            "success"
+        )
+
+
+    except Exception as error:
+
+        print(
+            "APPROVE ERROR:",
+            error
+        )
+
+        flash(
+            "Không thể duyệt bài.",
+            "error"
+        )
+
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# TỪ CHỐI BÀI
+# =========================================================
+
+@app.post(
+    "/admin/post/<int:post_id>/reject"
+)
+@login_required
+@admin_required
+def reject_post(post_id):
+
+    try:
+
+        supabase.table(
+            "posts"
+        ).update({
+
+            "status":
+                "rejected"
+
+        }).eq(
+            "id",
+            post_id
+        ).execute()
+
+
+        flash(
+            "Đã từ chối bài viết.",
+            "success"
+        )
+
+
+    except Exception as error:
+
+        print(
+            "REJECT ERROR:",
+            error
+        )
+
+        flash(
+            "Không thể từ chối bài.",
             "error"
         )
 
@@ -1439,10 +1570,12 @@ def delete_post(post_id):
             post_id
         ).execute()
 
+
         flash(
             "Đã xóa bài đăng.",
             "success"
         )
+
 
     except Exception as error:
 
@@ -1463,7 +1596,7 @@ def delete_post(post_id):
 
 
 # =========================================================
-# UPLOADS
+# HIỂN THỊ FILE UPLOAD
 # =========================================================
 
 @app.route(
@@ -1547,7 +1680,7 @@ def not_found(_):
 
 
 # =========================================================
-# CHẠY APP
+# CHẠY
 # =========================================================
 
 if __name__ == "__main__":
