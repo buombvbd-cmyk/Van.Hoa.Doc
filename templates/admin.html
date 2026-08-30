@@ -2,11 +2,8 @@
 <html lang="vi">
 
 <head>
-
     <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Quản trị Văn Hóa Đọc</title>
 
@@ -19,22 +16,23 @@
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background: #f3f8f4;
-            color: #173b24;
+            background: #f4f8f5;
+            color: #183b25;
         }
 
         .container {
-            width: 100%;
             max-width: 1250px;
             margin: auto;
-            padding: 25px;
+            padding: 24px;
         }
+
+        /* HEADER */
 
         .header {
             background: white;
-            padding: 25px;
             border-radius: 20px;
-            margin-bottom: 25px;
+            padding: 25px;
+            margin-bottom: 24px;
             box-shadow: 0 5px 20px rgba(0,0,0,.06);
         }
 
@@ -44,19 +42,21 @@
         }
 
         .header p {
-            margin: 0;
             color: #666;
         }
 
-        .buttons {
+        .header-buttons {
             margin-top: 18px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .btn {
             display: inline-block;
-            text-decoration: none;
             border: none;
-            padding: 11px 18px;
+            text-decoration: none;
+            padding: 11px 17px;
             border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
@@ -68,26 +68,28 @@
             color: white;
         }
 
-        .btn-danger {
+        .btn-logout {
             background: #c62828;
             color: white;
         }
 
-        .btn-warning {
-            background: #e08b00;
-            color: white;
+        /* MESSAGE */
+
+        .message {
+            background: #e8f6ec;
+            color: #176b35;
+            padding: 13px 16px;
+            border-radius: 10px;
+            margin-bottom: 15px;
         }
 
-        .btn-success {
-            background: #218c46;
-            color: white;
-        }
+        /* SECTION */
 
         .section {
             background: white;
-            padding: 25px;
             border-radius: 20px;
-            margin-bottom: 25px;
+            padding: 24px;
+            margin-bottom: 24px;
             box-shadow: 0 5px 20px rgba(0,0,0,.05);
         }
 
@@ -96,31 +98,35 @@
             color: #176b35;
         }
 
+        /* STATS */
+
         .stats {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 15px;
         }
 
         .stat {
             background: #eef8ef;
-            padding: 22px;
             border-radius: 15px;
+            padding: 20px;
             text-align: center;
         }
 
         .stat-number {
             display: block;
-            font-size: 32px;
+            font-size: 30px;
             font-weight: bold;
             color: #176b35;
             margin-bottom: 5px;
         }
 
+        /* FORM */
+
         .form-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
+            gap: 15px;
         }
 
         .form-group {
@@ -128,7 +134,7 @@
             flex-direction: column;
         }
 
-        .form-group.full {
+        .full {
             grid-column: 1 / -1;
         }
 
@@ -152,19 +158,19 @@
             border-color: #218c46;
         }
 
-        .submit-btn {
+        .submit {
             background: #218c46;
             color: white;
             border: none;
-            padding: 13px 22px;
+            padding: 13px 20px;
             border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 15px;
         }
 
+        /* TABLE */
+
         .table-wrap {
-            width: 100%;
             overflow-x: auto;
         }
 
@@ -177,7 +183,7 @@
         th,
         td {
             padding: 13px 10px;
-            border-bottom: 1px solid #e5e9e6;
+            border-bottom: 1px solid #e3e8e4;
             text-align: left;
             vertical-align: middle;
         }
@@ -188,50 +194,61 @@
             white-space: nowrap;
         }
 
+        /* BADGES */
+
         .badge {
             display: inline-block;
             padding: 5px 10px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: bold;
+            white-space: nowrap;
         }
 
-        .badge-student {
-            background: #e8f2ff;
+        .student {
+            background: #e6f1ff;
             color: #2161a8;
         }
 
-        .badge-teacher {
-            background: #fff2df;
+        .teacher {
+            background: #fff0d9;
             color: #9a5a00;
         }
 
-        .badge-admin {
+        .admin {
             background: #eee8ff;
             color: #6542a5;
         }
 
-        .badge-active {
-            background: #def5e4;
+        .approved {
+            background: #dff5e5;
             color: #176b35;
         }
 
-        .badge-locked {
-            background: #ffe4e4;
+        .pending {
+            background: #fff1d6;
+            color: #996000;
+        }
+
+        .rejected {
+            background: #ffe3e3;
             color: #b42318;
         }
 
+        .locked {
+            background: #ffe3e3;
+            color: #b42318;
+        }
+
+        /* ACTIONS */
+
         .actions {
             display: flex;
-            gap: 7px;
+            gap: 6px;
             flex-wrap: wrap;
         }
 
-        .actions form {
-            margin: 0;
-        }
-
-        .small-btn {
+        .action-btn {
             border: none;
             padding: 7px 10px;
             border-radius: 8px;
@@ -241,52 +258,84 @@
             font-weight: bold;
         }
 
-        .lock-btn {
-            background: #e08b00;
-        }
-
-        .unlock-btn {
+        .approve {
             background: #218c46;
         }
 
-        .delete-btn {
+        .reject {
+            background: #e08b00;
+        }
+
+        .delete {
             background: #c62828;
         }
 
-        .message {
-            padding: 13px 16px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            background: #eef8ef;
-            color: #176b35;
+        .lock {
+            background: #e08b00;
         }
 
-        .empty {
+        .unlock {
+            background: #218c46;
+        }
+
+        /* PENDING */
+
+        .pending-box {
+            border: 2px solid #f0c36d;
+            background: #fffaf0;
+            border-radius: 15px;
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+
+        .pending-title {
+            font-weight: bold;
+            font-size: 18px;
+            color: #996000;
+            margin-bottom: 8px;
+        }
+
+        .post-content {
+            line-height: 1.6;
+            margin: 10px 0;
+        }
+
+        .no-data {
             text-align: center;
             color: #777;
             padding: 25px;
         }
 
-        @media (max-width: 800px) {
+        /* MOBILE */
+
+        @media (max-width: 900px) {
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+        }
+
+        @media (max-width: 650px) {
 
             .container {
                 padding: 12px;
             }
 
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
+            .section {
+                padding: 17px;
             }
 
             .form-grid {
                 grid-template-columns: 1fr;
             }
 
-            .form-group.full {
+            .full {
                 grid-column: auto;
             }
 
-            .section {
-                padding: 18px;
+            .stats {
+                grid-template-columns: 1fr 1fr;
             }
 
         }
@@ -298,13 +347,12 @@
 
 <body>
 
-
 <div class="container">
 
 
-    <!-- =================================================
+    <!-- =====================================================
          HEADER
-    ================================================== -->
+    ====================================================== -->
 
     <div class="header">
 
@@ -313,24 +361,24 @@
         </h1>
 
         <p>
-            Xin chào,
+            Xin chào
             <strong>
                 {{ session.get("full_name", "Quản trị viên") }}
             </strong>
         </p>
 
-        <div class="buttons">
+        <div class="header-buttons">
 
             <a
-                class="btn btn-home"
                 href="{{ url_for('home') }}"
+                class="btn btn-home"
             >
                 🏠 Trang chủ
             </a>
 
             <a
-                class="btn btn-danger"
                 href="{{ url_for('logout') }}"
+                class="btn btn-logout"
             >
                 🚪 Đăng xuất
             </a>
@@ -340,9 +388,9 @@
     </div>
 
 
-    <!-- =================================================
+    <!-- =====================================================
          THÔNG BÁO
-    ================================================== -->
+    ====================================================== -->
 
     {% with messages = get_flashed_messages(with_categories=true) %}
 
@@ -351,9 +399,7 @@
             {% for category, message in messages %}
 
                 <div class="message">
-
                     {{ message }}
-
                 </div>
 
             {% endfor %}
@@ -363,9 +409,9 @@
     {% endwith %}
 
 
-    <!-- =================================================
+    <!-- =====================================================
          THỐNG KÊ
-    ================================================== -->
+    ====================================================== -->
 
     <div class="section">
 
@@ -374,6 +420,7 @@
         </h2>
 
         <div class="stats">
+
 
             <div class="stat">
 
@@ -392,7 +439,7 @@
                     {{ stats.posts }}
                 </span>
 
-                Bài chia sẻ
+                Bài viết
 
             </div>
 
@@ -418,19 +465,31 @@
 
             </div>
 
+
+            <div class="stat">
+
+                <span class="stat-number">
+                    {{ stats.pending }}
+                </span>
+
+                Chờ duyệt
+
+            </div>
+
+
         </div>
 
     </div>
 
 
-    <!-- =================================================
+    <!-- =====================================================
          CẤP TÀI KHOẢN
-    ================================================== -->
+    ====================================================== -->
 
     <div class="section">
 
         <h2>
-            👤 Cấp tài khoản mới
+            👤 Cấp tài khoản giáo viên / học sinh
         </h2>
 
         <form
@@ -519,7 +578,7 @@
                     <select name="grade">
 
                         <option value="">
-                            Chọn khối
+                            Không chọn
                         </option>
 
                         <option value="1">
@@ -566,12 +625,13 @@
 
                     <button
                         type="submit"
-                        class="submit-btn"
+                        class="submit"
                     >
                         ➕ Cấp tài khoản
                     </button>
 
                 </div>
+
 
             </div>
 
@@ -580,15 +640,176 @@
     </div>
 
 
-    <!-- =================================================
-         DANH SÁCH TÀI KHOẢN
-    ================================================== -->
+    <!-- =====================================================
+         BÀI CHỜ DUYỆT
+    ====================================================== -->
 
     <div class="section">
 
         <h2>
-            👥 Quản lý giáo viên / học sinh
+            📝 Bài viết chờ duyệt
         </h2>
+
+
+        {% if pending_posts %}
+
+
+            {% for post in pending_posts %}
+
+
+                <div class="pending-box">
+
+
+                    <div class="pending-title">
+
+                        📖 {{ post.book_title }}
+
+                    </div>
+
+
+                    <div>
+
+                        <strong>
+                            Người đăng:
+                        </strong>
+
+                        {{ post.full_name }}
+
+                    </div>
+
+
+                    {% if post.author %}
+
+                        <div>
+
+                            <strong>
+                                Tác giả:
+                            </strong>
+
+                            {{ post.author }}
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <div>
+
+                        <strong>
+                            Thời gian:
+                        </strong>
+
+                        {{ post.created_at }}
+
+                    </div>
+
+
+                    <div class="post-content">
+
+                        {% if post.impression %}
+
+                            <strong>
+                                Nội dung:
+                            </strong>
+
+                            <br>
+
+                            {{ post.impression }}
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="actions">
+
+
+                        <!-- DUYỆT -->
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('approve_post', post_id=post.id) }}"
+                        >
+
+                            <button
+                                type="submit"
+                                class="action-btn approve"
+                            >
+                                ✅ Duyệt bài
+                            </button>
+
+                        </form>
+
+
+                        <!-- TỪ CHỐI -->
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('reject_post', post_id=post.id) }}"
+                        >
+
+                            <button
+                                type="submit"
+                                class="action-btn reject"
+                                onclick="return confirm('Bạn có chắc muốn từ chối bài này?');"
+                            >
+                                ❌ Từ chối
+                            </button>
+
+                        </form>
+
+
+                        <!-- XÓA -->
+
+                        <form
+                            method="POST"
+                            action="{{ url_for('delete_post', post_id=post.id) }}"
+                            onsubmit="return confirm('Bạn có chắc muốn xóa bài này?');"
+                        >
+
+                            <button
+                                type="submit"
+                                class="action-btn delete"
+                            >
+                                🗑️ Xóa
+                            </button>
+
+                        </form>
+
+
+                    </div>
+
+
+                </div>
+
+
+            {% endfor %}
+
+
+        {% else %}
+
+            <div class="no-data">
+
+                🎉 Hiện không có bài viết nào chờ duyệt.
+
+            </div>
+
+        {% endif %}
+
+
+    </div>
+
+
+    <!-- =====================================================
+         QUẢN LÝ TÀI KHOẢN
+    ====================================================== -->
+
+    <div class="section">
+
+        <h2>
+            👥 Quản lý tài khoản
+        </h2>
+
 
         <div class="table-wrap">
 
@@ -633,12 +854,12 @@
 
                 <tbody>
 
+
                 {% for user in users %}
+
 
                     <tr>
 
-
-                        <!-- HỌ TÊN -->
 
                         <td>
 
@@ -649,8 +870,6 @@
                         </td>
 
 
-                        <!-- TÀI KHOẢN -->
-
                         <td>
 
                             {{ user.username }}
@@ -658,34 +877,34 @@
                         </td>
 
 
-                        <!-- ĐỐI TƯỢNG -->
-
                         <td>
 
-                            {% if user.user_type == "teacher" %}
 
-                                <span class="badge badge-teacher">
+                            {% if user.role == "admin" %}
+
+                                <span class="badge admin">
+                                    🛠️ Admin
+                                </span>
+
+
+                            {% elif user.user_type == "teacher" %}
+
+                                <span class="badge teacher">
                                     👨‍🏫 Giáo viên
                                 </span>
 
-                            {% elif user.user_type == "admin" or user.role == "admin" %}
-
-                                <span class="badge badge-admin">
-                                    🛠️ Quản trị viên
-                                </span>
 
                             {% else %}
 
-                                <span class="badge badge-student">
+                                <span class="badge student">
                                     👨‍🎓 Học sinh
                                 </span>
 
                             {% endif %}
 
+
                         </td>
 
-
-                        <!-- KHỐI -->
 
                         <td>
 
@@ -702,8 +921,6 @@
                         </td>
 
 
-                        <!-- LỚP -->
-
                         <td>
 
                             {{ user.class_name or "-" }}
@@ -711,30 +928,29 @@
                         </td>
 
 
-                        <!-- TRẠNG THÁI -->
-
                         <td>
+
 
                             {% if user.status == "locked" %}
 
-                                <span class="badge badge-locked">
+                                <span class="badge locked">
                                     🔒 Đã khóa
                                 </span>
 
                             {% else %}
 
-                                <span class="badge badge-active">
+                                <span class="badge approved">
                                     🟢 Hoạt động
                                 </span>
 
                             {% endif %}
 
+
                         </td>
 
 
-                        <!-- THAO TÁC -->
-
                         <td>
+
 
                             <div class="actions">
 
@@ -742,38 +958,45 @@
                                 {% if user.role != "admin" %}
 
 
-                                    <!-- KHÓA / MỞ -->
+                                    {% if user.status == "locked" %}
 
-                                    <form
-                                        method="POST"
-                                        action="{{ url_for('toggle_user', user_id=user.id) }}"
-                                    >
 
-                                        {% if user.status == "locked" %}
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for('toggle_user', user_id=user.id) }}"
+                                        >
 
                                             <button
                                                 type="submit"
-                                                class="small-btn unlock-btn"
+                                                class="action-btn unlock"
                                             >
                                                 🔓 Mở
                                             </button>
 
-                                        {% else %}
+                                        </form>
+
+
+                                    {% else %}
+
+
+                                        <form
+                                            method="POST"
+                                            action="{{ url_for('toggle_user', user_id=user.id) }}"
+                                            onsubmit="return confirm('Bạn có chắc muốn khóa tài khoản này?');"
+                                        >
 
                                             <button
                                                 type="submit"
-                                                class="small-btn lock-btn"
-                                                onclick="return confirm('Bạn có chắc muốn khóa tài khoản này?');"
+                                                class="action-btn lock"
                                             >
                                                 🔒 Khóa
                                             </button>
 
-                                        {% endif %}
-
-                                    </form>
+                                        </form>
 
 
-                                    <!-- XÓA -->
+                                    {% endif %}
+
 
                                     <form
                                         method="POST"
@@ -783,7 +1006,7 @@
 
                                         <button
                                             type="submit"
-                                            class="small-btn delete-btn"
+                                            class="action-btn delete"
                                         >
                                             🗑️ Xóa
                                         </button>
@@ -793,14 +1016,15 @@
 
                                 {% else %}
 
-                                    <span>
-                                        Admin
+                                    <span class="badge admin">
+                                        Tài khoản hệ thống
                                     </span>
 
                                 {% endif %}
 
 
                             </div>
+
 
                         </td>
 
@@ -810,20 +1034,23 @@
 
                 {% else %}
 
+
                     <tr>
 
                         <td
                             colspan="7"
-                            class="empty"
+                            class="no-data"
                         >
 
-                            Chưa có tài khoản thành viên.
+                            Chưa có tài khoản.
 
                         </td>
 
                     </tr>
 
+
                 {% endfor %}
+
 
                 </tbody>
 
@@ -834,15 +1061,16 @@
     </div>
 
 
-    <!-- =================================================
-         QUẢN LÝ BÀI
-    ================================================== -->
+    <!-- =====================================================
+         TẤT CẢ BÀI VIẾT
+    ====================================================== -->
 
     <div class="section">
 
         <h2>
-            📖 Quản lý bài chia sẻ
+            📚 Tất cả bài viết
         </h2>
+
 
         <div class="table-wrap">
 
@@ -865,6 +1093,10 @@
                         </th>
 
                         <th>
+                            Trạng thái
+                        </th>
+
+                        <th>
                             Thời gian
                         </th>
 
@@ -879,13 +1111,17 @@
 
                 <tbody>
 
+
                 {% for post in posts %}
 
+
                     <tr>
+
 
                         <td>
                             {{ post.id }}
                         </td>
+
 
                         <td>
 
@@ -895,11 +1131,49 @@
 
                         </td>
 
+
                         <td>
 
-                            {{ post.full_name or "-" }}
+                            {{ post.full_name }}
 
                         </td>
+
+
+                        <td>
+
+
+                            {% if post.status == "approved" %}
+
+                                <span class="badge approved">
+                                    🟢 Đã duyệt
+                                </span>
+
+
+                            {% elif post.status == "pending" %}
+
+                                <span class="badge pending">
+                                    🟡 Chờ duyệt
+                                </span>
+
+
+                            {% elif post.status == "rejected" %}
+
+                                <span class="badge rejected">
+                                    🔴 Từ chối
+                                </span>
+
+
+                            {% else %}
+
+                                <span class="badge pending">
+                                    Chưa xác định
+                                </span>
+
+                            {% endif %}
+
+
+                        </td>
+
 
                         <td>
 
@@ -907,43 +1181,111 @@
 
                         </td>
 
+
                         <td>
 
-                            <form
-                                method="POST"
-                                action="{{ url_for('delete_post', post_id=post.id) }}"
-                                onsubmit="return confirm('Bạn có chắc muốn xóa bài đăng này?');"
-                            >
 
-                                <button
-                                    type="submit"
-                                    class="small-btn delete-btn"
+                            <div class="actions">
+
+
+                                {% if post.status == "pending" %}
+
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('approve_post', post_id=post.id) }}"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="action-btn approve"
+                                        >
+                                            ✅ Duyệt
+                                        </button>
+
+                                    </form>
+
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('reject_post', post_id=post.id) }}"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="action-btn reject"
+                                        >
+                                            ❌ Từ chối
+                                        </button>
+
+                                    </form>
+
+
+                                {% elif post.status == "rejected" %}
+
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('approve_post', post_id=post.id) }}"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="action-btn approve"
+                                        >
+                                            🔄 Duyệt lại
+                                        </button>
+
+                                    </form>
+
+
+                                {% endif %}
+
+
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('delete_post', post_id=post.id) }}"
+                                    onsubmit="return confirm('Bạn có chắc muốn xóa bài này?');"
                                 >
-                                    🗑️ Xóa bài
-                                </button>
 
-                            </form>
+                                    <button
+                                        type="submit"
+                                        class="action-btn delete"
+                                    >
+                                        🗑️ Xóa
+                                    </button>
+
+                                </form>
+
+
+                            </div>
+
 
                         </td>
 
+
                     </tr>
 
+
                 {% else %}
+
 
                     <tr>
 
                         <td
-                            colspan="5"
-                            class="empty"
+                            colspan="6"
+                            class="no-data"
                         >
 
-                            Chưa có bài chia sẻ.
+                            Chưa có bài viết.
 
                         </td>
 
                     </tr>
 
+
                 {% endfor %}
+
 
                 </tbody>
 
