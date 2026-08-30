@@ -11,13 +11,19 @@ from flask import (
     flash,
     abort,
 )
-from werkzeug.security import generate_password_hash, check_password_hash
+
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash,
+)
+
 from werkzeug.utils import secure_filename
+
 from supabase import create_client
 
 
 # =========================================================
-# CẤU HÌNH
+# CẤU HÌNH ỨNG DỤNG
 # =========================================================
 
 app = Flask(__name__)
@@ -30,19 +36,28 @@ app.secret_key = os.environ.get(
 app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
 
 
+# =========================================================
+# SUPABASE
+# =========================================================
+
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY")
 
-if not SUPABASE_URL or not SUPABASE_SECRET_KEY:
-    raise RuntimeError(
-        "Thiếu SUPABASE_URL hoặc SUPABASE_SECRET_KEY"
-    )
+if not SUPABASE_URL:
+    raise RuntimeError("Thiếu SUPABASE_URL")
+
+if not SUPABASE_SECRET_KEY:
+    raise RuntimeError("Thiếu SUPABASE_SECRET_KEY")
 
 supabase = create_client(
     SUPABASE_URL,
     SUPABASE_SECRET_KEY
 )
 
+
+# =========================================================
+# STORAGE
+# =========================================================
 
 BUCKET_NAME = "uploads"
 
@@ -71,106 +86,151 @@ ALLOWED_FILES = {
 
 
 # =========================================================
-# HÀM TIỆN ÍCH
+# HÀM KIỂM TRA FILE
 # =========================================================
 
-def login_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if "user_id" not in session:
-            return redirect(url_for("login"))
-        return view(*args, **kwargs)
+def allowed_file(filename, allowed_extensions):
 
-    return wrapped
-
-
-def admin_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if session.get("role") != "admin":
-            abort(403)
-
-        return view(*args, **kwargs)
-
-    return wrapped
-
-
-def allowed_file(filename, allowed):
-    if not filename or "." not in filename:
+    if not filename:
         return False
 
-    ext = filename.rsplit(".", 1)[1].lower()
+    if "." not in filename:
+        return False
 
-    return ext in allowed
+    extension = filename.rsplit(
+        ".",
+        1
+    )[1].lower()
+
+    return extension in allowed_extensions
 
 
-def upload_to_supabase(file_obj, allowed):
-    """
-    Upload file lên Supabase Storage.
-    Trả về URL công khai.
-    """
+# =========================================================
+# UPLOAD FILE
+# =========================================================
 
-    if not file_obj or not file_obj.filename:
+def upload_to_supabase(file_obj, allowed_extensions):
+
+    if not file_obj:
         return ""
 
-    filename = secure_filename(file_obj.filename)
-
-    if not allowed_file(filename, allowed):
+    if not file_obj.filename:
         return ""
 
-    ext = filename.rsplit(".", 1)[1].lower()
+    filename = secure_filename(
+        file_obj.filename
+    )
 
-    unique_name = (
+    if not allowed_file(
+        filename,
+        allowed_extensions
+    ):
+        return ""
+
+    unique_filename = (
         os.urandom(8).hex()
         + "_"
         + filename
     )
 
-    path = f"{unique_name}"
-
-    data = file_obj.read()
-
     try:
-        supabase.storage.from_(BUCKET_NAME).upload(
-            path,
-            data,
+
+        file_data = file_obj.read()
+
+        content_type = (
+            file_obj.content_type
+            or "application/octet-stream"
+        )
+
+        supabase.storage.from_(
+            BUCKET_NAME
+        ).upload(
+            unique_filename,
+            file_data,
             {
-                "content-type": file_obj.content_type
-                or "application/octet-stream"
-            },
+                "content-type": content_type
+            }
         )
 
         public_url = (
-            f"{SUPABASE_URL}/storage/v1/object/public/"
-            f"{BUCKET_NAME}/{path}"
+            f"{SUPABASE_URL}"
+            f"/storage/v1/object/public/"
+            f"{BUCKET_NAME}/"
+            f"{unique_filename}"
         )
 
         return public_url
 
-    except Exception as e:
-        print("UPLOAD ERROR:", e)
+    except Exception as error:
+
+        print(
+            "UPLOAD ERROR:",
+            error
+        )
+
         return ""
 
 
 # =========================================================
-# TẠO ADMIN MẶC ĐỊNH
+# ĐĂNG NHẬP BẮT BUỘC
+# =========================================================
+
+def login_required(view):
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+
+        if "user_id" not in session:
+
+            return redirect(
+                url_for("login")
+            )
+
+        return view(
+            *args,
+            **kwargs
+        )
+
+    return wrapped
+
+
+# =========================================================
+# ADMIN BẮT BUỘC
+# =========================================================
+
+def admin_required(view):
+
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+
+        if session.get("role") != "admin":
+
+            abort(403)
+
+        return view(
+            *args,
+            **kwargs
+        )
+
+    return wrapped
+
+
+# =========================================================
+# TẠO / CẬP NHẬT ADMIN
 # =========================================================
 
 def ensure_admin():
-    """
-    Đảm bảo tài khoản admin tồn tại.
-
-    Tài khoản:
-        username: admin
-        password: Admin@123
-    """
 
     try:
+
         result = (
             supabase
             .table("users")
             .select("*")
-            .eq("username", "admin")
+            .eq(
+                "username",
+                "admin"
+            )
             .limit(1)
             .execute()
         )
@@ -181,47 +241,91 @@ def ensure_admin():
             "Admin@123"
         )
 
+        # -------------------------------------------------
+        # CHƯA CÓ ADMIN
+        # -------------------------------------------------
+
         if not users:
 
-            supabase.table("users").insert({
+            supabase.table(
+                "users"
+            ).insert({
+
                 "username": "admin",
+
                 "password": password_hash,
+
                 "full_name": "Quản trị viên",
+
                 "role": "admin",
+
             }).execute()
 
-            print("Đã tạo tài khoản admin.")
+            print(
+                "ADMIN: Đã tạo tài khoản admin."
+            )
+
+            return
+
+        # -------------------------------------------------
+        # ĐÃ CÓ ADMIN
+        # -------------------------------------------------
+
+        user = users[0]
+
+        password_valid = False
+
+        try:
+
+            password_valid = check_password_hash(
+                user.get("password", ""),
+                "Admin@123"
+            )
+
+        except Exception:
+
+            password_valid = False
+
+        # -------------------------------------------------
+        # CẬP NHẬT ADMIN
+        # -------------------------------------------------
+
+        if (
+            not password_valid
+            or user.get("role") != "admin"
+        ):
+
+            supabase.table(
+                "users"
+            ).update({
+
+                "password": password_hash,
+
+                "full_name": "Quản trị viên",
+
+                "role": "admin",
+
+            }).eq(
+                "id",
+                user["id"]
+            ).execute()
+
+            print(
+                "ADMIN: Đã cập nhật tài khoản admin."
+            )
 
         else:
 
-            user = users[0]
+            print(
+                "ADMIN: Tài khoản admin đã sẵn sàng."
+            )
 
-            # Nếu tài khoản admin đang có hash cũ
-            # thì cập nhật về mật khẩu mặc định.
-            try:
-                valid = check_password_hash(
-                    user["password"],
-                    "Admin@123"
-                )
-            except Exception:
-                valid = False
+    except Exception as error:
 
-            if not valid:
-                supabase.table("users").update({
-                    "password": password_hash,
-                    "role": "admin",
-                    "full_name": "Quản trị viên",
-                }).eq(
-                    "id",
-                    user["id"]
-                ).execute()
-
-                print(
-                    "Đã cập nhật mật khẩu admin."
-                )
-
-    except Exception as e:
-        print("ADMIN INIT ERROR:", e)
+        print(
+            "ADMIN INIT ERROR:",
+            error
+        )
 
 
 # =========================================================
@@ -236,60 +340,173 @@ def home():
         ""
     ).strip()
 
+    posts = []
+
+    # -----------------------------------------------------
+    # LẤY BÀI ĐĂNG
+    # -----------------------------------------------------
+
     try:
 
-        query = (
+        result = (
             supabase
             .table("posts")
-            .select(
-                "*, users!posts_user_id_fkey(full_name)"
-            )
+            .select("*")
             .order(
                 "id",
                 desc=True
             )
+            .execute()
         )
-
-        result = query.execute()
 
         posts = result.data or []
 
-    except Exception as e:
+    except Exception as error:
 
-        print("HOME ERROR:", e)
+        print(
+            "HOME POSTS ERROR:",
+            error
+        )
 
-        posts = []
+    # -----------------------------------------------------
+    # LẤY USERS
+    # -----------------------------------------------------
 
-    # Tìm kiếm phía Python
+    users = []
+
+    try:
+
+        result = (
+            supabase
+            .table("users")
+            .select(
+                "id,full_name"
+            )
+            .execute()
+        )
+
+        users = result.data or []
+
+    except Exception as error:
+
+        print(
+            "HOME USERS ERROR:",
+            error
+        )
+
+    user_map = {
+        str(user["id"]): user
+        for user in users
+    }
+
+    # -----------------------------------------------------
+    # TÌM KIẾM
+    # -----------------------------------------------------
+
     if q:
 
         keyword = q.lower()
 
-        filtered = []
+        filtered_posts = []
 
         for post in posts:
 
-            user = post.get("users") or {}
+            user = user_map.get(
+                str(post.get("user_id")),
+                {}
+            )
 
             full_name = user.get(
                 "full_name",
                 ""
             )
 
-            text = " ".join([
-                str(post.get("book_title", "")),
-                str(post.get("author", "")),
-                str(post.get("impression", "")),
+            searchable_text = " ".join([
+                str(
+                    post.get(
+                        "book_title",
+                        ""
+                    )
+                ),
+                str(
+                    post.get(
+                        "author",
+                        ""
+                    )
+                ),
+                str(
+                    post.get(
+                        "impression",
+                        ""
+                    )
+                ),
                 str(full_name),
             ]).lower()
 
-            if keyword in text:
-                filtered.append(post)
+            if keyword in searchable_text:
 
-        posts = filtered
+                filtered_posts.append(
+                    post
+                )
+
+        posts = filtered_posts
 
     # -----------------------------------------------------
-    # LIKE + COMMENT
+    # LIKE
+    # -----------------------------------------------------
+
+    likes = []
+
+    try:
+
+        result = (
+            supabase
+            .table("likes")
+            .select(
+                "id,post_id,user_id"
+            )
+            .execute()
+        )
+
+        likes = result.data or []
+
+    except Exception as error:
+
+        print(
+            "LIKES ERROR:",
+            error
+        )
+
+    # -----------------------------------------------------
+    # COMMENT
+    # -----------------------------------------------------
+
+    all_comments = []
+
+    try:
+
+        result = (
+            supabase
+            .table("comments")
+            .select("*")
+            .order(
+                "id",
+                desc=True
+            )
+            .execute()
+        )
+
+        all_comments = result.data or []
+
+    except Exception as error:
+
+        print(
+            "COMMENTS ERROR:",
+            error
+        )
+
+    # -----------------------------------------------------
+    # CHUẨN BỊ DỮ LIỆU
     # -----------------------------------------------------
 
     comments = {}
@@ -298,54 +515,63 @@ def home():
 
         post_id = post["id"]
 
-        try:
-
-            likes_result = (
-                supabase
-                .table("likes")
-                .select("id")
-                .eq("post_id", post_id)
-                .execute()
+        post["full_name"] = (
+            user_map
+            .get(
+                str(
+                    post.get(
+                        "user_id"
+                    )
+                ),
+                {}
             )
-
-            post["like_count"] = len(
-                likes_result.data or []
+            .get(
+                "full_name",
+                "Thành viên"
             )
+        )
 
-        except Exception:
+        post["like_count"] = sum(
+            1
+            for like in likes
+            if like.get("post_id") == post_id
+        )
 
-            post["like_count"] = 0
+        post["comment_count"] = sum(
+            1
+            for comment in all_comments
+            if comment.get("post_id") == post_id
+        )
 
-        try:
+        post_comments = []
 
-            comments_result = (
-                supabase
-                .table("comments")
-                .select(
-                    "*, users!comments_user_id_fkey(full_name)"
+        for comment in all_comments:
+
+            if comment.get(
+                "post_id"
+            ) == post_id:
+
+                comment_user = user_map.get(
+                    str(
+                        comment.get(
+                            "user_id"
+                        )
+                    ),
+                    {}
                 )
-                .eq(
-                    "post_id",
-                    post_id
+
+                comment["full_name"] = (
+                    comment_user.get(
+                        "full_name",
+                        "Thành viên"
+                    )
                 )
-                .order(
-                    "id",
-                    desc=True
+
+                post_comments.append(
+                    comment
                 )
-                .execute()
-            )
 
-            rows = comments_result.data or []
-
-            comments[post_id] = rows
-
-            post["comment_count"] = len(rows)
-
-        except Exception:
-
-            comments[post_id] = []
-
-            post["comment_count"] = 0
+        comments[post_id] = post_comments
 
     return render_template(
         "home.html",
@@ -404,51 +630,99 @@ def login():
 
             users = result.data or []
 
-            user = users[0] if users else None
+            if not users:
 
-        except Exception as e:
+                flash(
+                    "Sai tài khoản hoặc mật khẩu.",
+                    "error"
+                )
 
-            print("LOGIN ERROR:", e)
+                return render_template(
+                    "login.html"
+                )
 
-            user = None
-
-        if user:
+            user = users[0]
 
             try:
 
                 password_ok = check_password_hash(
-                    user["password"],
+                    user.get(
+                        "password",
+                        ""
+                    ),
                     password
                 )
 
-            except Exception:
+            except Exception as error:
+
+                print(
+                    "PASSWORD CHECK ERROR:",
+                    error
+                )
 
                 password_ok = False
 
-            if password_ok:
+            if not password_ok:
 
-                session["user_id"] = user["id"]
-
-                session["username"] = (
-                    user["username"]
+                flash(
+                    "Sai tài khoản hoặc mật khẩu.",
+                    "error"
                 )
 
-                session["full_name"] = (
-                    user["full_name"]
+                return render_template(
+                    "login.html"
                 )
 
-                session["role"] = (
-                    user["role"]
-                )
+            # ---------------------------------------------
+            # TẠO SESSION
+            # ---------------------------------------------
 
-                return redirect(
-                    url_for("home")
-                )
+            session.clear()
 
-        flash(
-            "Sai tài khoản hoặc mật khẩu.",
-            "error"
-        )
+            session["user_id"] = user["id"]
+
+            session["username"] = (
+                user["username"]
+            )
+
+            session["full_name"] = (
+                user.get(
+                    "full_name",
+                    "Thành viên"
+                )
+            )
+
+            session["role"] = (
+                user.get(
+                    "role",
+                    "member"
+                )
+            )
+
+            flash(
+                "Đăng nhập thành công.",
+                "success"
+            )
+
+            return redirect(
+                url_for("home")
+            )
+
+        except Exception as error:
+
+            print(
+                "LOGIN ERROR:",
+                error
+            )
+
+            flash(
+                "Không thể đăng nhập. Vui lòng thử lại.",
+                "error"
+            )
+
+            return render_template(
+                "login.html"
+            )
 
     return render_template(
         "login.html"
@@ -513,15 +787,27 @@ def share():
                 "share.html"
             )
 
-        image = upload_to_supabase(
+        # -------------------------------------------------
+        # UPLOAD ẢNH
+        # -------------------------------------------------
+
+        image_url = upload_to_supabase(
             request.files.get("image"),
             ALLOWED_IMAGES
         )
 
-        video = upload_to_supabase(
+        # -------------------------------------------------
+        # UPLOAD VIDEO
+        # -------------------------------------------------
+
+        video_url = upload_to_supabase(
             request.files.get("video"),
             ALLOWED_VIDEOS
         )
+
+        # -------------------------------------------------
+        # UPLOAD FILE
+        # -------------------------------------------------
 
         file_url = upload_to_supabase(
             request.files.get("file"),
@@ -530,23 +816,33 @@ def share():
 
         try:
 
-            supabase.table("posts").insert({
+            supabase.table(
+                "posts"
+            ).insert({
 
-                "user_id": session["user_id"],
+                "user_id":
+                    session["user_id"],
 
-                "book_title": title,
+                "book_title":
+                    title,
 
-                "author": author,
+                "author":
+                    author,
 
-                "impression": impression,
+                "impression":
+                    impression,
 
-                "image": image,
+                "image":
+                    image_url,
 
-                "video": video,
+                "video":
+                    video_url,
 
-                "file_name": file_url,
+                "file_name":
+                    file_url,
 
-                "url": external_url,
+                "url":
+                    external_url,
 
             }).execute()
 
@@ -559,9 +855,12 @@ def share():
                 url_for("home")
             )
 
-        except Exception as e:
+        except Exception as error:
 
-            print("POST ERROR:", e)
+            print(
+                "CREATE POST ERROR:",
+                error
+            )
 
             flash(
                 "Không thể đăng bài. Vui lòng thử lại.",
@@ -619,13 +918,21 @@ def like(post_id):
             supabase.table(
                 "likes"
             ).insert({
-                "post_id": post_id,
-                "user_id": user_id
+
+                "post_id":
+                    post_id,
+
+                "user_id":
+                    user_id,
+
             }).execute()
 
-    except Exception as e:
+    except Exception as error:
 
-        print("LIKE ERROR:", e)
+        print(
+            "LIKE ERROR:",
+            error
+        )
 
     return redirect(
         request.referrer
@@ -656,17 +963,23 @@ def comment(post_id):
                 "comments"
             ).insert({
 
-                "post_id": post_id,
+                "post_id":
+                    post_id,
 
-                "user_id": session["user_id"],
+                "user_id":
+                    session["user_id"],
 
-                "content": content,
+                "content":
+                    content,
 
             }).execute()
 
-        except Exception as e:
+        except Exception as error:
 
-            print("COMMENT ERROR:", e)
+            print(
+                "COMMENT ERROR:",
+                error
+            )
 
     return redirect(
         request.referrer
@@ -685,6 +998,10 @@ def comment(post_id):
 @login_required
 @admin_required
 def admin():
+
+    # -----------------------------------------------------
+    # TẠO TÀI KHOẢN THÀNH VIÊN
+    # -----------------------------------------------------
 
     if request.method == "POST":
 
@@ -743,16 +1060,19 @@ def admin():
                         "users"
                     ).insert({
 
-                        "username": username,
+                        "username":
+                            username,
 
                         "password":
                             generate_password_hash(
                                 password
                             ),
 
-                        "full_name": full_name,
+                        "full_name":
+                            full_name,
 
-                        "role": "member",
+                        "role":
+                            "member",
 
                     }).execute()
 
@@ -761,9 +1081,12 @@ def admin():
                         "success"
                     )
 
-            except Exception as e:
+            except Exception as error:
 
-                print("CREATE USER ERROR:", e)
+                print(
+                    "CREATE USER ERROR:",
+                    error
+                )
 
                 flash(
                     "Không thể tạo tài khoản.",
@@ -774,9 +1097,11 @@ def admin():
     # USERS
     # -----------------------------------------------------
 
+    users = []
+
     try:
 
-        users_result = (
+        result = (
             supabase
             .table("users")
             .select(
@@ -789,24 +1114,28 @@ def admin():
             .execute()
         )
 
-        users = users_result.data or []
+        users = result.data or []
 
-    except Exception:
+    except Exception as error:
 
-        users = []
+        print(
+            "ADMIN USERS ERROR:",
+            error
+        )
 
     # -----------------------------------------------------
     # POSTS
     # -----------------------------------------------------
 
+    posts = []
+
     try:
 
-        posts_result = (
+        result = (
             supabase
             .table("posts")
             .select(
-                "id,book_title,created_at,"
-                "users!posts_user_id_fkey(full_name)"
+                "id,book_title,created_at,user_id"
             )
             .order(
                 "id",
@@ -815,54 +1144,96 @@ def admin():
             .execute()
         )
 
-        posts = posts_result.data or []
+        posts = result.data or []
 
-    except Exception:
+    except Exception as error:
 
-        posts = []
+        print(
+            "ADMIN POSTS ERROR:",
+            error
+        )
+
+    user_map = {
+        str(user["id"]): user
+        for user in users
+    }
+
+    for post in posts:
+
+        user = user_map.get(
+            str(
+                post.get(
+                    "user_id"
+                )
+            ),
+            {}
+        )
+
+        post["full_name"] = user.get(
+            "full_name",
+            "Thành viên"
+        )
 
     # -----------------------------------------------------
-    # STATS
+    # THỐNG KÊ
     # -----------------------------------------------------
 
     try:
 
-        members = (
+        members_result = (
             supabase
             .table("users")
-            .select("id", count="exact")
+            .select(
+                "id",
+                count="exact"
+            )
             .execute()
-            .count
+        )
+
+        members = (
+            members_result.count
             or 0
         )
 
     except Exception:
 
-        members = 0
+        members = len(users)
 
     try:
 
-        post_count = (
+        posts_result = (
             supabase
             .table("posts")
-            .select("id", count="exact")
+            .select(
+                "id",
+                count="exact"
+            )
             .execute()
-            .count
+        )
+
+        post_count = (
+            posts_result.count
             or 0
         )
 
     except Exception:
 
-        post_count = 0
+        post_count = len(posts)
 
     try:
 
-        like_count = (
+        likes_result = (
             supabase
             .table("likes")
-            .select("id", count="exact")
+            .select(
+                "id",
+                count="exact"
+            )
             .execute()
-            .count
+        )
+
+        like_count = (
+            likes_result.count
             or 0
         )
 
@@ -872,12 +1243,18 @@ def admin():
 
     try:
 
-        comment_count = (
+        comments_result = (
             supabase
             .table("comments")
-            .select("id", count="exact")
+            .select(
+                "id",
+                count="exact"
+            )
             .execute()
-            .count
+        )
+
+        comment_count = (
+            comments_result.count
             or 0
         )
 
@@ -887,13 +1264,17 @@ def admin():
 
     stats = {
 
-        "members": members,
+        "members":
+            members,
 
-        "posts": post_count,
+        "posts":
+            post_count,
 
-        "likes": like_count,
+        "likes":
+            like_count,
 
-        "comments": comment_count,
+        "comments":
+            comment_count,
 
     }
 
@@ -930,9 +1311,12 @@ def delete_post(post_id):
             "success"
         )
 
-    except Exception as e:
+    except Exception as error:
 
-        print("DELETE POST ERROR:", e)
+        print(
+            "DELETE POST ERROR:",
+            error
+        )
 
         flash(
             "Không thể xóa bài đăng.",
@@ -945,7 +1329,7 @@ def delete_post(post_id):
 
 
 # =========================================================
-# LỖI 403
+# KIỂM TRA QUYỀN TRUY CẬP
 # =========================================================
 
 @app.errorhandler(403)
@@ -958,7 +1342,7 @@ def forbidden(_):
 
 
 # =========================================================
-# KIỂM TRA SUPABASE
+# HEALTH CHECK
 # =========================================================
 
 @app.route("/health")
@@ -966,7 +1350,7 @@ def health():
 
     try:
 
-        result = (
+        (
             supabase
             .table("users")
             .select("id")
@@ -975,18 +1359,34 @@ def health():
         )
 
         return {
-            "service": "VanHoaDoc",
-            "status": "ok",
-            "supabase": True,
+
+            "service":
+                "VanHoaDoc",
+
+            "status":
+                "ok",
+
+            "supabase":
+                True,
+
         }
 
-    except Exception as e:
+    except Exception as error:
 
         return {
-            "service": "VanHoaDoc",
-            "status": "error",
-            "supabase": False,
-            "message": str(e),
+
+            "service":
+                "VanHoaDoc",
+
+            "status":
+                "error",
+
+            "supabase":
+                False,
+
+            "message":
+                str(error),
+
         }, 500
 
 
@@ -995,10 +1395,20 @@ def health():
 # =========================================================
 
 try:
-    ensure_admin()
-except Exception as e:
-    print("STARTUP ERROR:", e)
 
+    ensure_admin()
+
+except Exception as error:
+
+    print(
+        "STARTUP ERROR:",
+        error
+    )
+
+
+# =========================================================
+# CHẠY APP
+# =========================================================
 
 if __name__ == "__main__":
 
