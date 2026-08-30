@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Quản trị - Văn Hóa Đọc</title>
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Quản trị Văn Hóa Đọc</title>
 
     <style>
+
         * {
             box-sizing: border-box;
         }
@@ -14,20 +19,21 @@
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background: #f3f8f3;
+            background: #f3f8f4;
             color: #173b24;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            width: 100%;
+            max-width: 1250px;
+            margin: auto;
             padding: 25px;
         }
 
         .header {
             background: white;
-            padding: 22px;
-            border-radius: 18px;
+            padding: 25px;
+            border-radius: 20px;
             margin-bottom: 25px;
             box-shadow: 0 5px 20px rgba(0,0,0,.06);
         }
@@ -42,20 +48,45 @@
             color: #666;
         }
 
-        .back {
+        .buttons {
+            margin-top: 18px;
+        }
+
+        .btn {
             display: inline-block;
-            margin-top: 15px;
             text-decoration: none;
-            color: white;
-            background: #218c46;
-            padding: 10px 18px;
+            border: none;
+            padding: 11px 18px;
             border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .btn-home {
+            background: #218c46;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #c62828;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #e08b00;
+            color: white;
+        }
+
+        .btn-success {
+            background: #218c46;
+            color: white;
         }
 
         .section {
             background: white;
             padding: 25px;
-            border-radius: 18px;
+            border-radius: 20px;
             margin-bottom: 25px;
             box-shadow: 0 5px 20px rgba(0,0,0,.05);
         }
@@ -65,15 +96,40 @@
             color: #176b35;
         }
 
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .stat {
+            background: #eef8ef;
+            padding: 22px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 32px;
+            font-weight: bold;
+            color: #176b35;
+            margin-bottom: 5px;
+        }
+
         .form-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
+            gap: 16px;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
         }
 
         label {
@@ -83,139 +139,210 @@
 
         input,
         select {
+            width: 100%;
             padding: 12px;
             border: 1px solid #ccd8cf;
             border-radius: 10px;
             font-size: 15px;
+            outline: none;
         }
 
-        .full {
-            grid-column: 1 / -1;
+        input:focus,
+        select:focus {
+            border-color: #218c46;
         }
 
-        button {
-            border: 0;
-            cursor: pointer;
-            padding: 12px 22px;
-            border-radius: 10px;
+        .submit-btn {
             background: #218c46;
             color: white;
-            font-size: 15px;
+            border: none;
+            padding: 13px 22px;
+            border-radius: 10px;
+            cursor: pointer;
             font-weight: bold;
-        }
-
-        button:hover {
-            background: #176b35;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-        }
-
-        .stat {
-            padding: 20px;
-            border-radius: 15px;
-            background: #eef8ef;
-            text-align: center;
-        }
-
-        .stat strong {
-            display: block;
-            font-size: 30px;
-            margin-bottom: 5px;
-            color: #176b35;
+            font-size: 15px;
         }
 
         .table-wrap {
+            width: 100%;
             overflow-x: auto;
         }
 
         table {
             width: 100%;
+            min-width: 850px;
             border-collapse: collapse;
         }
 
         th,
         td {
             padding: 13px 10px;
-            border-bottom: 1px solid #e4e9e5;
+            border-bottom: 1px solid #e5e9e6;
             text-align: left;
+            vertical-align: middle;
         }
 
         th {
             background: #eef8ef;
             color: #176b35;
+            white-space: nowrap;
         }
 
         .badge {
             display: inline-block;
             padding: 5px 10px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
+            font-weight: bold;
         }
 
-        .active {
-            background: #dff5e5;
+        .badge-student {
+            background: #e8f2ff;
+            color: #2161a8;
+        }
+
+        .badge-teacher {
+            background: #fff2df;
+            color: #9a5a00;
+        }
+
+        .badge-admin {
+            background: #eee8ff;
+            color: #6542a5;
+        }
+
+        .badge-active {
+            background: #def5e4;
             color: #176b35;
         }
 
-        .locked {
+        .badge-locked {
             background: #ffe4e4;
             color: #b42318;
         }
 
+        .actions {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .actions form {
+            margin: 0;
+        }
+
+        .small-btn {
+            border: none;
+            padding: 7px 10px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .lock-btn {
+            background: #e08b00;
+        }
+
+        .unlock-btn {
+            background: #218c46;
+        }
+
+        .delete-btn {
+            background: #c62828;
+        }
+
         .message {
-            padding: 12px 15px;
+            padding: 13px 16px;
             border-radius: 10px;
             margin-bottom: 15px;
             background: #eef8ef;
+            color: #176b35;
         }
 
-        @media (max-width: 700px) {
+        .empty {
+            text-align: center;
+            color: #777;
+            padding: 25px;
+        }
+
+        @media (max-width: 800px) {
 
             .container {
                 padding: 12px;
+            }
+
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .form-grid {
                 grid-template-columns: 1fr;
             }
 
-            .full {
+            .form-group.full {
                 grid-column: auto;
             }
 
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
+            .section {
+                padding: 18px;
             }
+
         }
+
     </style>
+
 </head>
+
 
 <body>
 
+
 <div class="container">
 
-    <!-- HEADER -->
+
+    <!-- =================================================
+         HEADER
+    ================================================== -->
 
     <div class="header">
 
-        <h1>📚 Quản trị Văn Hóa Đọc</h1>
+        <h1>
+            📚 Quản trị Văn Hóa Đọc
+        </h1>
 
         <p>
-            Xin chào {{ session.get("full_name", "Quản trị viên") }}
+            Xin chào,
+            <strong>
+                {{ session.get("full_name", "Quản trị viên") }}
+            </strong>
         </p>
 
-        <a class="back" href="{{ url_for('home') }}">
-            🏠 Về trang chủ
-        </a>
+        <div class="buttons">
+
+            <a
+                class="btn btn-home"
+                href="{{ url_for('home') }}"
+            >
+                🏠 Trang chủ
+            </a>
+
+            <a
+                class="btn btn-danger"
+                href="{{ url_for('logout') }}"
+            >
+                🚪 Đăng xuất
+            </a>
+
+        </div>
 
     </div>
 
 
-    <!-- THÔNG BÁO -->
+    <!-- =================================================
+         THÔNG BÁO
+    ================================================== -->
 
     {% with messages = get_flashed_messages(with_categories=true) %}
 
@@ -224,7 +351,9 @@
             {% for category, message in messages %}
 
                 <div class="message">
+
                     {{ message }}
+
                 </div>
 
             {% endfor %}
@@ -234,32 +363,59 @@
     {% endwith %}
 
 
-    <!-- THỐNG KÊ -->
+    <!-- =================================================
+         THỐNG KÊ
+    ================================================== -->
 
     <div class="section">
 
-        <h2>📊 Thống kê</h2>
+        <h2>
+            📊 Tổng quan
+        </h2>
 
         <div class="stats">
 
             <div class="stat">
-                <strong>{{ stats.members }}</strong>
+
+                <span class="stat-number">
+                    {{ stats.members }}
+                </span>
+
                 Thành viên
+
             </div>
 
+
             <div class="stat">
-                <strong>{{ stats.posts }}</strong>
+
+                <span class="stat-number">
+                    {{ stats.posts }}
+                </span>
+
                 Bài chia sẻ
+
             </div>
 
+
             <div class="stat">
-                <strong>{{ stats.likes }}</strong>
+
+                <span class="stat-number">
+                    {{ stats.likes }}
+                </span>
+
                 Lượt thích
+
             </div>
 
+
             <div class="stat">
-                <strong>{{ stats.comments }}</strong>
+
+                <span class="stat-number">
+                    {{ stats.comments }}
+                </span>
+
                 Bình luận
+
             </div>
 
         </div>
@@ -267,11 +423,15 @@
     </div>
 
 
-    <!-- CẤP TÀI KHOẢN -->
+    <!-- =================================================
+         CẤP TÀI KHOẢN
+    ================================================== -->
 
     <div class="section">
 
-        <h2>👤 Cấp tài khoản mới</h2>
+        <h2>
+            👤 Cấp tài khoản mới
+        </h2>
 
         <form
             method="POST"
@@ -279,6 +439,7 @@
         >
 
             <div class="form-grid">
+
 
                 <div class="form-group">
 
@@ -299,7 +460,7 @@
                 <div class="form-group">
 
                     <label>
-                        Tài khoản
+                        Tên tài khoản
                     </label>
 
                     <input
@@ -337,11 +498,11 @@
                     <select name="user_type">
 
                         <option value="student">
-                            Học sinh
+                            👨‍🎓 Học sinh
                         </option>
 
                         <option value="teacher">
-                            Giáo viên
+                            👨‍🏫 Giáo viên
                         </option>
 
                     </select>
@@ -403,7 +564,10 @@
 
                 <div class="form-group full">
 
-                    <button type="submit">
+                    <button
+                        type="submit"
+                        class="submit-btn"
+                    >
                         ➕ Cấp tài khoản
                     </button>
 
@@ -416,11 +580,15 @@
     </div>
 
 
-    <!-- DANH SÁCH TÀI KHOẢN -->
+    <!-- =================================================
+         DANH SÁCH TÀI KHOẢN
+    ================================================== -->
 
     <div class="section">
 
-        <h2>👥 Danh sách tài khoản</h2>
+        <h2>
+            👥 Quản lý giáo viên / học sinh
+        </h2>
 
         <div class="table-wrap">
 
@@ -430,91 +598,232 @@
 
                     <tr>
 
-                        <th>Họ tên</th>
+                        <th>
+                            Họ tên
+                        </th>
 
-                        <th>Tài khoản</th>
+                        <th>
+                            Tài khoản
+                        </th>
 
-                        <th>Vai trò</th>
+                        <th>
+                            Đối tượng
+                        </th>
 
-                        <th>Đối tượng</th>
+                        <th>
+                            Khối
+                        </th>
 
-                        <th>Khối</th>
+                        <th>
+                            Lớp
+                        </th>
 
-                        <th>Lớp</th>
+                        <th>
+                            Trạng thái
+                        </th>
 
-                        <th>Trạng thái</th>
+                        <th>
+                            Thao tác
+                        </th>
 
                     </tr>
 
                 </thead>
 
+
                 <tbody>
 
-                    {% for user in users %}
+                {% for user in users %}
 
                     <tr>
 
-                        <td>
-                            {{ user.full_name }}
-                        </td>
+
+                        <!-- HỌ TÊN -->
 
                         <td>
+
+                            <strong>
+                                {{ user.full_name }}
+                            </strong>
+
+                        </td>
+
+
+                        <!-- TÀI KHOẢN -->
+
+                        <td>
+
                             {{ user.username }}
+
                         </td>
 
-                        <td>
-                            {{ user.role }}
-                        </td>
+
+                        <!-- ĐỐI TƯỢNG -->
 
                         <td>
+
                             {% if user.user_type == "teacher" %}
-                                Giáo viên
-                            {% elif user.user_type == "admin" %}
-                                Quản trị viên
+
+                                <span class="badge badge-teacher">
+                                    👨‍🏫 Giáo viên
+                                </span>
+
+                            {% elif user.user_type == "admin" or user.role == "admin" %}
+
+                                <span class="badge badge-admin">
+                                    🛠️ Quản trị viên
+                                </span>
+
                             {% else %}
-                                Học sinh
+
+                                <span class="badge badge-student">
+                                    👨‍🎓 Học sinh
+                                </span>
+
                             {% endif %}
+
                         </td>
 
-                        <td>
-                            {{ user.grade or "-" }}
-                        </td>
+
+                        <!-- KHỐI -->
 
                         <td>
+
+                            {% if user.grade %}
+
+                                Khối {{ user.grade }}
+
+                            {% else %}
+
+                                -
+
+                            {% endif %}
+
+                        </td>
+
+
+                        <!-- LỚP -->
+
+                        <td>
+
                             {{ user.class_name or "-" }}
+
                         </td>
+
+
+                        <!-- TRẠNG THÁI -->
 
                         <td>
 
                             {% if user.status == "locked" %}
 
-                                <span class="badge locked">
-                                    Đã khóa
+                                <span class="badge badge-locked">
+                                    🔒 Đã khóa
                                 </span>
 
                             {% else %}
 
-                                <span class="badge active">
-                                    Đang hoạt động
+                                <span class="badge badge-active">
+                                    🟢 Hoạt động
                                 </span>
 
                             {% endif %}
 
                         </td>
 
+
+                        <!-- THAO TÁC -->
+
+                        <td>
+
+                            <div class="actions">
+
+
+                                {% if user.role != "admin" %}
+
+
+                                    <!-- KHÓA / MỞ -->
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('toggle_user', user_id=user.id) }}"
+                                    >
+
+                                        {% if user.status == "locked" %}
+
+                                            <button
+                                                type="submit"
+                                                class="small-btn unlock-btn"
+                                            >
+                                                🔓 Mở
+                                            </button>
+
+                                        {% else %}
+
+                                            <button
+                                                type="submit"
+                                                class="small-btn lock-btn"
+                                                onclick="return confirm('Bạn có chắc muốn khóa tài khoản này?');"
+                                            >
+                                                🔒 Khóa
+                                            </button>
+
+                                        {% endif %}
+
+                                    </form>
+
+
+                                    <!-- XÓA -->
+
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('delete_user', user_id=user.id) }}"
+                                        onsubmit="return confirm('Bạn có chắc muốn xóa tài khoản này?');"
+                                    >
+
+                                        <button
+                                            type="submit"
+                                            class="small-btn delete-btn"
+                                        >
+                                            🗑️ Xóa
+                                        </button>
+
+                                    </form>
+
+
+                                {% else %}
+
+                                    <span>
+                                        Admin
+                                    </span>
+
+                                {% endif %}
+
+
+                            </div>
+
+                        </td>
+
+
                     </tr>
 
-                    {% else %}
+
+                {% else %}
 
                     <tr>
 
-                        <td colspan="7">
-                            Chưa có tài khoản.
+                        <td
+                            colspan="7"
+                            class="empty"
+                        >
+
+                            Chưa có tài khoản thành viên.
+
                         </td>
 
                     </tr>
 
-                    {% endfor %}
+                {% endfor %}
 
                 </tbody>
 
@@ -525,11 +834,15 @@
     </div>
 
 
-    <!-- DANH SÁCH BÀI -->
+    <!-- =================================================
+         QUẢN LÝ BÀI
+    ================================================== -->
 
     <div class="section">
 
-        <h2>📖 Quản lý bài chia sẻ</h2>
+        <h2>
+            📖 Quản lý bài chia sẻ
+        </h2>
 
         <div class="table-wrap">
 
@@ -539,21 +852,34 @@
 
                     <tr>
 
-                        <th>ID</th>
+                        <th>
+                            ID
+                        </th>
 
-                        <th>Tên sách</th>
+                        <th>
+                            Tên sách
+                        </th>
 
-                        <th>Ngày đăng</th>
+                        <th>
+                            Người đăng
+                        </th>
 
-                        <th>Thao tác</th>
+                        <th>
+                            Thời gian
+                        </th>
+
+                        <th>
+                            Thao tác
+                        </th>
 
                     </tr>
 
                 </thead>
 
+
                 <tbody>
 
-                    {% for post in posts %}
+                {% for post in posts %}
 
                     <tr>
 
@@ -562,11 +888,23 @@
                         </td>
 
                         <td>
-                            {{ post.book_title }}
+
+                            <strong>
+                                {{ post.book_title }}
+                            </strong>
+
                         </td>
 
                         <td>
+
+                            {{ post.full_name or "-" }}
+
+                        </td>
+
+                        <td>
+
                             {{ post.created_at }}
+
                         </td>
 
                         <td>
@@ -574,14 +912,14 @@
                             <form
                                 method="POST"
                                 action="{{ url_for('delete_post', post_id=post.id) }}"
-                                onsubmit="return confirm('Bạn có chắc muốn xóa bài này?');"
+                                onsubmit="return confirm('Bạn có chắc muốn xóa bài đăng này?');"
                             >
 
                                 <button
                                     type="submit"
-                                    style="background:#c62828;"
+                                    class="small-btn delete-btn"
                                 >
-                                    🗑️ Xóa
+                                    🗑️ Xóa bài
                                 </button>
 
                             </form>
@@ -590,17 +928,22 @@
 
                     </tr>
 
-                    {% else %}
+                {% else %}
 
                     <tr>
 
-                        <td colspan="4">
+                        <td
+                            colspan="5"
+                            class="empty"
+                        >
+
                             Chưa có bài chia sẻ.
+
                         </td>
 
                     </tr>
 
-                    {% endfor %}
+                {% endfor %}
 
                 </tbody>
 
@@ -610,7 +953,10 @@
 
     </div>
 
+
 </div>
 
+
 </body>
+
 </html>
