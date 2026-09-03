@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Chi tiết bài viết</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f8f5;
+            color: #183b25;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: auto;
+            padding: 25px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,.06);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: #176b35;
+        }
+
+        h2 {
+            color: #176b35;
+            border-bottom: 1px solid #e3e8e4;
+            padding-bottom: 10px;
+        }
+
+        .info {
+            margin: 12px 0;
+            line-height: 1.6;
+        }
+
+        .label {
+            font-weight: bold;
+        }
+
+        .content {
+            background: #f8faf8;
+            border-radius: 12px;
+            padding: 18px;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .media {
+            margin-top: 15px;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 600px;
+            border-radius: 12px;
+            display: block;
+        }
+
+        video {
+            width: 100%;
+            max-height: 600px;
+            border-radius: 12px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .btn {
+            border: none;
+            padding: 11px 17px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back {
+            background: #607d68;
+        }
+
+        .approve {
+            background: #218c46;
+        }
+
+        .reject {
+            background: #e08b00;
+        }
+
+        .delete {
+            background: #c62828;
+        }
+
+        .link {
+            color: #176b35;
+            font-weight: bold;
+            word-break: break-all;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            background: #fff1d6;
+            color: #996000;
+        }
+
+        .message {
+            background: #e8f6ec;
+            color: #176b35;
+            padding: 13px 16px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 650px) {
+
+            .container {
+                padding: 12px;
+            }
+
+            .card {
+                padding: 18px;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+<div class="container">
+
+
+    <div class="card">
+
+        <h1>
+            📖 Chi tiết bài viết
+        </h1>
+
+        <div class="info">
+            <span class="label">Tên sách:</span>
+            {{ post.book_title }}
+        </div>
+
+
+        {% if post.author %}
+
+        <div class="info">
+            <span class="label">Tác giả:</span>
+            {{ post.author }}
+        </div>
+
+        {% endif %}
+
+
+        <div class="info">
+
+            <span class="label">
+                Người đăng:
+            </span>
+
+            {{ post.full_name }}
+
+        </div>
+
+
+        {% if user %}
+
+        <div class="info">
+
+            <span class="label">
+                Tài khoản:
+            </span>
+
+            {{ user.username }}
+
+        </div>
+
+
+        {% if user.user_type %}
+
+        <div class="info">
+
+            <span class="label">
+                Đối tượng:
+            </span>
+
+            {{ user.user_type }}
+
+        </div>
+
+        {% endif %}
+
+
+        {% if user.grade %}
+
+        <div class="info">
+
+            <span class="label">
+                Khối:
+            </span>
+
+            {{ user.grade }}
+
+        </div>
+
+        {% endif %}
+
+
+        {% if user.class_name %}
+
+        <div class="info">
+
+            <span class="label">
+                Lớp:
+            </span>
+
+            {{ user.class_name }}
+
+        </div>
+
+        {% endif %}
+
+        {% endif %}
+
+
+        <div class="info">
+
+            <span class="label">
+                Thời gian:
+            </span>
+
+            {{ post.created_at }}
+
+        </div>
+
+
+        <div class="info">
+
+            <span class="label">
+                Trạng thái:
+            </span>
+
+            <span class="status">
+                {{ post.status }}
+            </span>
+
+        </div>
+
+
+    </div>
+
+
+
+    {% if post.impression %}
+
+    <div class="card">
+
+        <h2>
+            💭 Cảm nhận / Nội dung
+        </h2>
+
+        <div class="content">
+            {{ post.impression }}
+        </div>
+
+    </div>
+
+    {% endif %}
+
+
+
+    {% if post.image_url %}
+
+    <div class="card">
+
+        <h2>
+            🖼️ Hình ảnh
+        </h2>
+
+        <div class="media">
+
+            <img
+                src="{{ post.image_url }}"
+                alt="Hình ảnh bài viết"
+            >
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+
+
+    {% if post.video_url %}
+
+    <div class="card">
+
+        <h2>
+            🎬 Video
+        </h2>
+
+        <div class="media">
+
+            <video controls>
+
+                <source
+                    src="{{ post.video_url }}"
+                    type="video/mp4"
+                >
+
+                Trình duyệt không hỗ trợ video.
+
+            </video>
+
+        </div>
+
+    </div>
+
+    {% endif %}
+
+
+
+    {% if post.file_url %}
+
+    <div class="card">
+
+        <h2>
+            📎 File đính kèm
+        </h2>
+
+        <a
+            href="{{ post.file_url }}"
+            target="_blank"
+            class="link"
+        >
+            📥 Mở / xem file đính kèm
+        </a>
+
+    </div>
+
+    {% endif %}
+
+
+
+    {% if post.external_url %}
+
+    <div class="card">
+
+        <h2>
+            🔗 Liên kết bên ngoài
+        </h2>
+
+        <a
+            href="{{ post.external_url }}"
+            target="_blank"
+            class="link"
+        >
+            {{ post.external_url }}
+        </a>
+
+    </div>
+
+    {% endif %}
+
+
+
+    <div class="card">
+
+        <h2>
+            ⚙️ Xử lý bài viết
+        </h2>
+
+
+        <div class="actions">
+
+
+            <a
+                href="{{ url_for('admin') }}"
+                class="btn back"
+            >
+                ↩️ Quay lại
+            </a>
+
+
+            {% if post.status != "approved" %}
+
+            <form
+                method="POST"
+                action="{{ url_for('approve_post', post_id=post.id) }}"
+            >
+
+                <button
+                    type="submit"
+                    class="btn approve"
+                >
+                    ✅ Duyệt bài
+                </button>
+
+            </form>
+
+            {% endif %}
+
+
+            {% if post.status != "rejected" %}
+
+            <form
+                method="POST"
+                action="{{ url_for('reject_post', post_id=post.id) }}"
+                onsubmit="return confirm('Bạn có chắc muốn từ chối bài này?');"
+            >
+
+                <button
+                    type="submit"
+                    class="btn reject"
+                >
+                    ❌ Từ chối
+                </button>
+
+            </form>
+
+            {% endif %}
+
+
+            <form
+                method="POST"
+                action="{{ url_for('delete_post', post_id=post.id) }}"
+                onsubmit="return confirm('Bạn có chắc muốn xóa bài này?');"
+            >
+
+                <button
+                    type="submit"
+                    class="btn delete"
+                >
+                    🗑️ Xóa bài
+                </button>
+
+            </form>
+
+
+        </div>
+
+    </div>
+
+
+</div>
+
+</body>
+
+</html>
