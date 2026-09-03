@@ -1064,7 +1064,12 @@ def admin():
 
         users = result.data or []
 
-    except Exception:
+    except Exception as error:
+
+        print(
+            "ADMIN USERS ERROR:",
+            error
+        )
 
         users = []
 
@@ -1091,7 +1096,12 @@ def admin():
 
         posts = result.data or []
 
-    except Exception:
+    except Exception as error:
+
+        print(
+            "ADMIN POSTS ERROR:",
+            error
+        )
 
         posts = []
 
@@ -1118,8 +1128,75 @@ def admin():
         )
 
 
+    # =====================================================
+    # DANH SÁCH BÌNH LUẬN
+    # =====================================================
+
+    try:
+
+        result = (
+            supabase
+            .table("comments")
+            .select(
+                "id,post_id,user_id,content,created_at"
+            )
+            .order(
+                "id",
+                desc=True
+            )
+            .execute()
+        )
+
+        comments = result.data or []
+
+    except Exception as error:
+
+        print(
+            "ADMIN COMMENTS ERROR:",
+            error
+        )
+
+        comments = []
+
+
     # -----------------------------------------------------
-    # THỐNG KÊ
+    # GÁN TÊN NGƯỜI BÌNH LUẬN + TÊN BÀI VIẾT
+    # -----------------------------------------------------
+
+    post_map = {
+        post["id"]: post
+        for post in posts
+    }
+
+    for comment_item in comments:
+
+        comment_user = user_map.get(
+            comment_item.get("user_id"),
+            {}
+        )
+
+        comment_post = post_map.get(
+            comment_item.get("post_id"),
+            {}
+        )
+
+        comment_item["full_name"] = (
+            comment_user.get(
+                "full_name",
+                "Thành viên"
+            )
+        )
+
+        comment_item["book_title"] = (
+            comment_post.get(
+                "book_title",
+                "Bài viết không tồn tại"
+            )
+        )
+
+
+    # -----------------------------------------------------
+    # THỐNG KÊ THÀNH VIÊN
     # -----------------------------------------------------
 
     try:
@@ -1141,6 +1218,10 @@ def admin():
         members = len(users)
 
 
+    # -----------------------------------------------------
+    # THỐNG KÊ BÀI VIẾT
+    # -----------------------------------------------------
+
     try:
 
         result = (
@@ -1159,6 +1240,10 @@ def admin():
 
         post_count = len(posts)
 
+
+    # -----------------------------------------------------
+    # THỐNG KÊ LIKE
+    # -----------------------------------------------------
 
     try:
 
@@ -1179,6 +1264,10 @@ def admin():
         like_count = 0
 
 
+    # -----------------------------------------------------
+    # THỐNG KÊ BÌNH LUẬN
+    # -----------------------------------------------------
+
     try:
 
         result = (
@@ -1195,7 +1284,7 @@ def admin():
 
     except Exception:
 
-        comment_count = 0
+        comment_count = len(comments)
 
 
     # -----------------------------------------------------
@@ -1212,6 +1301,10 @@ def admin():
 
     ]
 
+
+    # -----------------------------------------------------
+    # STATS
+    # -----------------------------------------------------
 
     stats = {
 
@@ -1238,6 +1331,7 @@ def admin():
         users=users,
         posts=posts,
         pending_posts=pending_posts,
+        comments=comments,
         stats=stats
     )
 
@@ -1586,6 +1680,86 @@ def delete_post(post_id):
 
         flash(
             "Không thể xóa bài đăng.",
+            "error"
+        )
+
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# =========================================================
+# XÓA BÌNH LUẬN - ADMIN
+# =========================================================
+
+@app.post(
+    "/admin/comment/<int:comment_id>/delete"
+)
+@login_required
+@admin_required
+def delete_comment(comment_id):
+
+    try:
+
+        # -------------------------------------------------
+        # KIỂM TRA BÌNH LUẬN CÓ TỒN TẠI KHÔNG
+        # -------------------------------------------------
+
+        result = (
+            supabase
+            .table("comments")
+            .select("id")
+            .eq(
+                "id",
+                comment_id
+            )
+            .limit(1)
+            .execute()
+        )
+
+        comments = result.data or []
+
+
+        if not comments:
+
+            flash(
+                "Không tìm thấy bình luận.",
+                "error"
+            )
+
+            return redirect(
+                url_for("admin")
+            )
+
+
+        # -------------------------------------------------
+        # XÓA BÌNH LUẬN
+        # -------------------------------------------------
+
+        supabase.table(
+            "comments"
+        ).delete().eq(
+            "id",
+            comment_id
+        ).execute()
+
+
+        flash(
+            "Đã xóa bình luận.",
+            "success"
+        )
+
+
+    except Exception as error:
+
+        print(
+            "DELETE COMMENT ERROR:",
+            error
+        )
+
+        flash(
+            "Không thể xóa bình luận.",
             "error"
         )
 
