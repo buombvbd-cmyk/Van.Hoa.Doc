@@ -1,1455 +1,184 @@
-import os
-from functools import wraps
-
-from flask import (
-    Flask,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    session,
-    flash,
-    send_from_directory,
-    abort,
-)
-
-from werkzeug.security import (
-    generate_password_hash,
-    check_password_hash,
-)
-
-from werkzeug.utils import secure_filename
-from supabase import create_client
-
-
-# =========================================================
-# CẤU HÌNH
-# =========================================================
-
-app = Flask(__name__)
-
-app.secret_key = os.environ.get(
-    "SECRET_KEY",
-    "van-hoa-doc-secret-key"
-)
-
-app.config["MAX_CONTENT_LENGTH"] = 100 * 1024 * 1024
-
-
-# =========================================================
-# SUPABASE
-# =========================================================
-
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_SECRET_KEY = os.environ.get("SUPABASE_SECRET_KEY")
-
-if not SUPABASE_URL:
-    raise RuntimeError("Thiếu SUPABASE_URL")
-
-if not SUPABASE_SECRET_KEY:
-    raise RuntimeError("Thiếu SUPABASE_SECRET_KEY")
-
-supabase = create_client(
-    SUPABASE_URL,
-    SUPABASE_SECRET_KEY
-)
-
-
-# =========================================================
-# UPLOAD
-# =========================================================
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-
-os.makedirs(
-    UPLOAD_DIR,
-    exist_ok=True
-)
-
-ALLOWED_IMAGES = {
-    "png", "jpg", "jpeg", "gif", "webp"
-}
-
-ALLOWED_VIDEOS = {
-    "mp4", "webm", "mov"
-}
-
-ALLOWED_FILES = {
-    "pdf", "doc", "docx", "ppt", "pptx", "txt"
-}
-
-
-def allowed_file(filename, extensions):
-
-    if not filename:
-        return False
-
-    if "." not in filename:
-        return False
-
-    extension = filename.rsplit(".", 1)[1].lower()
-
-    return extension in extensions
-
-
-def save_upload(file_obj, extensions):
-
-    if not file_obj:
-        return ""
-
-    if not file_obj.filename:
-        return ""
-
-    if not allowed_file(file_obj.filename, extensions):
-        return ""
-
-    filename = secure_filename(file_obj.filename)
-
-    if not filename:
-        return ""
-
-    unique_name = (
-        os.urandom(12).hex()
-        + "_"
-        + filename
-    )
-
-    path = os.path.join(
-        UPLOAD_DIR,
-        unique_name
-    )
-
-    try:
-
-        file_obj.save(path)
-
-        return unique_name
-
-    except Exception as error:
-
-        print("UPLOAD ERROR:", error)
-
-        return ""
-
-
-# =========================================================
-# LOGIN REQUIRED
-# =========================================================
-
-def login_required(view):
-
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-
-        if "user_id" not in session:
-
-            return redirect(
-                url_for("login")
-            )
-
-        return view(*args, **kwargs)
-
-    return wrapped
-
-
-# =========================================================
-# ADMIN REQUIRED
-# =========================================================
-
-def admin_required(view):
-
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-
-        if session.get("role") != "admin":
-            abort(403)
-
-        return view(*args, **kwargs)
-
-    return wrapped
-
-
-# =========================================================
-# TRANG CHỦ
-# =========================================================
-
-@app.route("/")
-def home():
-
-    q = request.args.get("q", "").strip()
-
-    # -----------------------------------------------------
-    # CHỈ LẤY BÀI ĐÃ DUYỆT
-    # -----------------------------------------------------
-
-    try:
-
-        result = (
-            supabase
-            .table("posts")
-            .select("*")
-            .eq("status", "approved")
-            .order("id", desc=True)
-            .execute()
-        )
-
-        posts = result.data or []
-
-    except Exception as error:
-
-        print("HOME POSTS ERROR:", error)
-
-        posts = []
-
-    # -----------------------------------------------------
-    # USERS
-    # -----------------------------------------------------
-
-    try:
-
-        result = (
-            supabase
-            .table("users")
-            .select(
-                "id,username,full_name,role,"
-                "user_type,grade,class_name,status"
-            )
-            .execute()
-        )
-
-        users = result.data or []
-
-    except Exception as error:
-
-        print("HOME USERS ERROR:", error)
-
-        users = []
-
-    user_map = {
-        user["id"]: user
-        for user in users
-    }
-
-    # -----------------------------------------------------
-    # TÌM KIẾM
-    # -----------------------------------------------------
-
+    r=Reader.query.get_or_404(reader_id); img=qrcode.make(f'READER:{r.code}'); out=BytesIO(); img.save(out,format='PNG'); out.seek(0); return send_file(out,mimetype='image/png')
+
+@app.route('/readers/<int:reader_id>/reading-profile')
+def reading_profile(reader_id):
+    if not logged_in(): return redirect(url_for('login'))
+    r=Reader.query.get_or_404(reader_id); refresh_badges(r.id); return render_template('reading_profile.html',reader=r,books_read=books_read(r.id),points=total_reading_points(r.id),badges=Badge.query.filter_by(reader_id=r.id).order_by(Badge.earned_at).all(),activities=ReadingActivity.query.filter_by(reader_id=r.id).order_by(ReadingActivity.id.desc()).all(),rewards=Reward.query.filter_by(reader_id=r.id).order_by(Reward.id.desc()).all(),loans=Loan.query.filter_by(reader_id=r.id).order_by(Loan.id.desc()).all())
+
+@app.route('/readers/<int:reader_id>/card')
+def reader_card(reader_id):
+    if not logged_in(): return redirect(url_for('login'))
+    return render_template('reader_card.html',reader=Reader.query.get_or_404(reader_id))
+
+@app.route('/loans')
+def loans():
+    if not logged_in(): return redirect(url_for('login'))
+    q=request.args.get('q','').strip(); status=request.args.get('status','all')
+    query=Loan.query.join(Book).join(Reader)
     if q:
+        like=f'%{q}%'; query=query.filter(db.or_(Book.title.ilike(like),Book.code.ilike(like),Reader.name.ilike(like),Reader.code.ilike(like)))
+    if status == 'active': query=query.filter(Loan.status=='Đang mượn')
+    elif status == 'returned': query=query.filter(Loan.status=='Đã trả')
+    elif status == 'overdue': query=query.filter(Loan.status=='Đang mượn', Loan.due_date < date.today())
+    data=query.order_by(Loan.id.desc()).all()
+    return render_template('loans.html',loans=data,q=q,status=status,is_overdue=is_overdue)
 
-        keyword = q.lower()
-        filtered_posts = []
-
-        for post in posts:
-
-            user = user_map.get(
-                post.get("user_id"),
-                {}
-            )
-
-            searchable_text = " ".join([
-                str(post.get("book_title", "")),
-                str(post.get("author", "")),
-                str(post.get("impression", "")),
-                str(user.get("full_name", "")),
-            ]).lower()
-
-            if keyword in searchable_text:
-                filtered_posts.append(post)
-
-        posts = filtered_posts
-
-    # -----------------------------------------------------
-    # LIKES
-    # -----------------------------------------------------
-
-    try:
-
-        result = (
-            supabase
-            .table("likes")
-            .select("id,post_id,user_id")
-            .execute()
-        )
-
-        likes = result.data or []
-
-    except Exception as error:
-
-        print("HOME LIKES ERROR:", error)
-
-        likes = []
-
-    # -----------------------------------------------------
-    # COMMENTS
-    # -----------------------------------------------------
-
-    try:
-
-        result = (
-            supabase
-            .table("comments")
-            .select("*")
-            .order("id", desc=True)
-            .execute()
-        )
-
-        all_comments = result.data or []
-
-    except Exception as error:
-
-        print("HOME COMMENTS ERROR:", error)
-
-        all_comments = []
-
-    # -----------------------------------------------------
-    # GHÉP DỮ LIỆU
-    # -----------------------------------------------------
-
-    comments = {}
-
-    for post in posts:
-
-        post_id = post.get("id")
-
-        user = user_map.get(
-            post.get("user_id"),
-            {}
-        )
-
-        post["full_name"] = user.get(
-            "full_name",
-            "Thành viên"
-        )
-
-        post["like_count"] = sum(
-            1
-            for like in likes
-            if like.get("post_id") == post_id
-        )
-
-        post_comments = []
-
-        for comment_item in all_comments:
-
-            if comment_item.get("post_id") == post_id:
-
-                comment_user = user_map.get(
-                    comment_item.get("user_id"),
-                    {}
-                )
-
-                comment_item["full_name"] = (
-                    comment_user.get(
-                        "full_name",
-                        "Thành viên"
-                    )
-                )
-
-                post_comments.append(comment_item)
-
-        comments[post_id] = post_comments
-
-        post["comment_count"] = len(
-            post_comments
-        )
-
-    return render_template(
-        "home.html",
-        posts=posts,
-        comments=comments,
-        q=q
-    )
-
-
-# =========================================================
-# ĐĂNG NHẬP
-# =========================================================
-
-@app.route(
-    "/login",
-    methods=["GET", "POST"]
-)
-def login():
-
-    if request.method == "POST":
-
-        username = request.form.get(
-            "username",
-            ""
-        ).strip()
-
-        password = request.form.get(
-            "password",
-            ""
-        )
-
-        if not username or not password:
-
-            flash(
-                "Vui lòng nhập tài khoản và mật khẩu.",
-                "error"
-            )
-
-            return render_template("login.html")
-
+@app.route('/loans/add', methods=['GET','POST'])
+def add_loan():
+    if not logged_in(): return redirect(url_for('login'))
+    if request.method=='POST':
         try:
-
-            result = (
-                supabase
-                .table("users")
-                .select("*")
-                .eq("username", username)
-                .limit(1)
-                .execute()
-            )
-
-            users = result.data or []
-
-            if not users:
-
-                flash(
-                    "Sai tài khoản hoặc mật khẩu.",
-                    "error"
-                )
-
-                return render_template("login.html")
-
-            user = users[0]
-
-            # ---------------------------------------------
-            # KIỂM TRA TÀI KHOẢN KHÓA
-            # ---------------------------------------------
-
-            if user.get("status") == "locked":
-
-                flash(
-                    "Tài khoản đã bị khóa.",
-                    "error"
-                )
-
-                return render_template("login.html")
-
-            # ---------------------------------------------
-            # KIỂM TRA MẬT KHẨU
-            # ---------------------------------------------
-
-            try:
-
-                password_ok = check_password_hash(
-                    user.get("password", ""),
-                    password
-                )
-
-            except Exception:
-
-                password_ok = False
-
-            if not password_ok:
-
-                flash(
-                    "Sai tài khoản hoặc mật khẩu.",
-                    "error"
-                )
-
-                return render_template("login.html")
-
-            # ---------------------------------------------
-            # SESSION
-            # ---------------------------------------------
-
-            session.clear()
-
-            session["user_id"] = user["id"]
-            session["username"] = user.get("username", "")
-            session["full_name"] = user.get("full_name", "")
-            session["role"] = user.get("role", "member")
-            session["user_type"] = user.get("user_type", "student")
-            session["grade"] = user.get("grade", "")
-            session["class_name"] = user.get("class_name", "")
-
-            return redirect(
-                url_for("home")
-            )
-
-        except Exception as error:
-
-            print("LOGIN ERROR:", error)
-
-            flash(
-                "Không thể đăng nhập.",
-                "error"
-            )
-
-    return render_template("login.html")
-
-
-# =========================================================
-# ĐĂNG XUẤT
-# =========================================================
-
-@app.route("/logout")
-def logout():
-
-    session.clear()
-
-    return redirect(
-        url_for("home")
-    )
-
-
-# =========================================================
-# CHIA SẺ BÀI
-# =========================================================
-
-@app.route(
-    "/share",
-    methods=["GET", "POST"]
-)
-@login_required
-def share():
-
-    if request.method == "POST":
-
-        book_title = request.form.get(
-            "book_title",
-            ""
-        ).strip()
-
-        author = request.form.get(
-            "author",
-            ""
-        ).strip()
-
-        impression = request.form.get(
-            "impression",
-            ""
-        ).strip()
-
-        external_url = request.form.get(
-            "url",
-            ""
-        ).strip()
-
-        if not book_title:
-
-            flash(
-                "Vui lòng nhập tên sách.",
-                "error"
-            )
-
-            return render_template("share.html")
-
-        if not impression:
-
-            flash(
-                "Vui lòng nhập điều bạn ấn tượng.",
-                "error"
-            )
-
-            return render_template("share.html")
-
-        try:
-
-            image = save_upload(
-                request.files.get("image"),
-                ALLOWED_IMAGES
-            )
-
-            video = save_upload(
-                request.files.get("video"),
-                ALLOWED_VIDEOS
-            )
-
-            file_name = save_upload(
-                request.files.get("file"),
-                ALLOWED_FILES
-            )
-
-            supabase.table(
-                "posts"
-            ).insert({
-
-                "user_id": session["user_id"],
-                "book_title": book_title,
-                "author": author,
-                "impression": impression,
-                "image": image,
-                "video": video,
-                "file_name": file_name,
-                "url": external_url,
-                "status": "pending",
-
-            }).execute()
-
-            flash(
-                "Bài đã được gửi và đang chờ quản trị viên duyệt.",
-                "success"
-            )
-
-            return redirect(
-                url_for("home")
-            )
-
-        except Exception as error:
-
-            print("SHARE ERROR:", error)
-
-            flash(
-                "Không thể chia sẻ bài viết.",
-                "error"
-            )
-
-    return render_template("share.html")
-
-
-# =========================================================
-# LIKE
-# =========================================================
-
-@app.post("/post/<int:post_id>/like")
-@login_required
-def like(post_id):
-
-    try:
-
-        result = (
-            supabase
-            .table("likes")
-            .select("id")
-            .eq("post_id", post_id)
-            .eq("user_id", session["user_id"])
-            .limit(1)
-            .execute()
-        )
-
-        existing = result.data or []
-
-        if existing:
-
-            supabase.table(
-                "likes"
-            ).delete().eq(
-                "id",
-                existing[0]["id"]
-            ).execute()
-
+            book=Book.query.get(int(request.form['book_id'])); reader=Reader.query.get(int(request.form['reader_id']))
+            if not book or not reader: raise ValueError('Sách hoặc bạn đọc không tồn tại.')
+            if book.quantity <= 0: raise ValueError('Sách đã hết.')
+            if Loan.query.filter_by(reader_id=reader.id,status='Đang mượn').count() >= 5: raise ValueError('Bạn đọc đã đạt tối đa 5 sách đang mượn.')
+            due=date.today()+timedelta(days=int(request.form.get('days') or 14)); db.session.add(Loan(book_id=book.id,reader_id=reader.id,borrow_date=date.today(),due_date=due)); book.quantity-=1; db.session.commit(); flash('Đã lập phiếu mượn.','success'); return redirect(url_for('loans'))
+        except Exception as e: db.session.rollback(); flash(str(e),'error')
+    return render_template('loan_form.html',books=Book.query.filter(Book.quantity>0).order_by(Book.title).all(),readers=Reader.query.order_by(Reader.name).all())
+
+@app.route('/loans/return/<int:loan_id>', methods=['POST'])
+def return_loan(loan_id):
+    if not logged_in(): return redirect(url_for('login'))
+    l=Loan.query.get_or_404(loan_id)
+    if l.status=='Đã trả': flash('Phiếu này đã trả.','error'); return redirect(url_for('loans'))
+    l.status='Đã trả'; l.return_date=date.today(); l.book.quantity+=1; db.session.commit(); award_return_points(l); flash('Đã trả sách và cộng 20 điểm Văn hóa Đọc.','success'); return redirect(url_for('loans'))
+
+@app.route('/quick-borrow', methods=['GET','POST'])
+def quick_borrow():
+    if not logged_in(): return redirect(url_for('login'))
+    if request.method=='POST':
+        code=request.form.get('code','').strip(); book=Book.query.filter_by(code=code).first(); reader=Reader.query.filter_by(code=request.form.get('reader_code','').strip()).first()
+        if not book or not reader: flash('Không tìm thấy mã sách hoặc mã bạn đọc.','error')
+        elif book.quantity<=0: flash('Sách đã hết.','error')
+        elif Loan.query.filter_by(reader_id=reader.id,status='Đang mượn').count()>=5: flash('Bạn đọc đã đạt tối đa 5 sách.','error')
         else:
-
-            supabase.table(
-                "likes"
-            ).insert({
-                "post_id": post_id,
-                "user_id": session["user_id"]
-            }).execute()
-
-    except Exception as error:
-
-        print("LIKE ERROR:", error)
-
-    return redirect(
-        request.referrer
-        or url_for("home")
-    )
-
-
-# =========================================================
-# BÌNH LUẬN
-# =========================================================
-
-@app.post("/post/<int:post_id>/comment")
-@login_required
-def comment(post_id):
-
-    content = request.form.get(
-        "content",
-        ""
-    ).strip()
-
-    if content:
-
-        try:
-
-            supabase.table(
-                "comments"
-            ).insert({
-                "post_id": post_id,
-                "user_id": session["user_id"],
-                "content": content
-            }).execute()
-
-        except Exception as error:
-
-            print("COMMENT ERROR:", error)
-
-    return redirect(
-        request.referrer
-        or url_for("home")
-    )
-
-
-# =========================================================
-# ADMIN
-# =========================================================
-
-@app.route(
-    "/admin",
-    methods=["GET", "POST"]
-)
-@login_required
-@admin_required
-def admin():
-
-    # -----------------------------------------------------
-    # CẤP TÀI KHOẢN
-    # -----------------------------------------------------
-
-    if request.method == "POST":
-
-        full_name = request.form.get(
-            "full_name",
-            ""
-        ).strip()
-
-        username = request.form.get(
-            "username",
-            ""
-        ).strip()
-
-        password = request.form.get(
-            "password",
-            ""
-        )
-
-        user_type = request.form.get(
-            "user_type",
-            "student"
-        ).strip()
-
-        grade = request.form.get(
-            "grade",
-            ""
-        ).strip()
-
-        class_name = request.form.get(
-            "class_name",
-            ""
-        ).strip()
-
-        if not full_name or not username or not password:
-
-            flash(
-                "Vui lòng nhập đầy đủ thông tin.",
-                "error"
-            )
-
-        else:
-
-            try:
-
-                existing = (
-                    supabase
-                    .table("users")
-                    .select("id")
-                    .eq("username", username)
-                    .limit(1)
-                    .execute()
-                )
-
-                if existing.data:
-
-                    flash(
-                        "Tên tài khoản đã tồn tại.",
-                        "error"
-                    )
-
-                else:
-
-                    supabase.table(
-                        "users"
-                    ).insert({
-
-                        "username": username,
-
-                        "password":
-                            generate_password_hash(
-                                password
-                            ),
-
-                        "full_name": full_name,
-                        "role": "member",
-                        "user_type": user_type,
-                        "grade": grade,
-                        "class_name": class_name,
-                        "status": "active"
-
-                    }).execute()
-
-                    flash(
-                        "Đã cấp tài khoản thành công.",
-                        "success"
-                    )
-
-            except Exception as error:
-
-                print("CREATE USER ERROR:", error)
-
-                flash(
-                    "Không thể tạo tài khoản.",
-                    "error"
-                )
-
-    # -----------------------------------------------------
-    # DANH SÁCH USER
-    # -----------------------------------------------------
-
-    try:
-
-        result = (
-            supabase
-            .table("users")
-            .select(
-                "id,full_name,username,role,"
-                "user_type,grade,class_name,status"
-            )
-            .order("id", desc=True)
-            .execute()
-        )
-
-        users = result.data or []
-
-    except Exception as error:
-
-        print("ADMIN USERS ERROR:", error)
-
-        users = []
-
-    # -----------------------------------------------------
-    # DANH SÁCH POSTS
-    # -----------------------------------------------------
-    # ĐÃ SỬA: THÊM impression
-    # -----------------------------------------------------
-
-    try:
-
-        result = (
-            supabase
-            .table("posts")
-            .select(
-                "id,book_title,created_at,"
-                "user_id,status,author,impression"
-            )
-            .order("id", desc=True)
-            .execute()
-        )
-
-        posts = result.data or []
-
-    except Exception as error:
-
-        print("ADMIN POSTS ERROR:", error)
-
-        posts = []
-
-    # -----------------------------------------------------
-    # GÁN TÊN NGƯỜI ĐĂNG
-    # -----------------------------------------------------
-
-    user_map = {
-        user["id"]: user
-        for user in users
-    }
-
-    for post in posts:
-
-        user = user_map.get(
-            post.get("user_id"),
-            {}
-        )
-
-        post["full_name"] = user.get(
-            "full_name",
-            "Thành viên"
-        )
-
-    # =====================================================
-    # DANH SÁCH BÌNH LUẬN
-    # =====================================================
-
-    try:
-
-        result = (
-            supabase
-            .table("comments")
-            .select(
-                "id,post_id,user_id,content,created_at"
-            )
-            .order("id", desc=True)
-            .execute()
-        )
-
-        comments = result.data or []
-
-    except Exception as error:
-
-        print("ADMIN COMMENTS ERROR:", error)
-
-        comments = []
-
-    # -----------------------------------------------------
-    # GÁN NGƯỜI BÌNH LUẬN + BÀI VIẾT
-    # -----------------------------------------------------
-
-    post_map = {
-        post["id"]: post
-        for post in posts
-    }
-
-    for comment_item in comments:
-
-        comment_user = user_map.get(
-            comment_item.get("user_id"),
-            {}
-        )
-
-        comment_post = post_map.get(
-            comment_item.get("post_id"),
-            {}
-        )
-
-        comment_item["full_name"] = (
-            comment_user.get(
-                "full_name",
-                "Thành viên"
-            )
-        )
-
-        comment_item["book_title"] = (
-            comment_post.get(
-                "book_title",
-                "Bài viết không tồn tại"
-            )
-        )
-
-    # -----------------------------------------------------
-    # THỐNG KÊ THÀNH VIÊN
-    # -----------------------------------------------------
-
-    try:
-
-        result = (
-            supabase
-            .table("users")
-            .select(
-                "id",
-                count="exact"
-            )
-            .execute()
-        )
-
-        members = result.count or 0
-
-    except Exception:
-
-        members = len(users)
-
-    # -----------------------------------------------------
-    # THỐNG KÊ BÀI VIẾT
-    # -----------------------------------------------------
-
-    try:
-
-        result = (
-            supabase
-            .table("posts")
-            .select(
-                "id",
-                count="exact"
-            )
-            .execute()
-        )
-
-        post_count = result.count or 0
-
-    except Exception:
-
-        post_count = len(posts)
-
-    # -----------------------------------------------------
-    # THỐNG KÊ LIKE
-    # -----------------------------------------------------
-
-    try:
-
-        result = (
-            supabase
-            .table("likes")
-            .select(
-                "id",
-                count="exact"
-            )
-            .execute()
-        )
-
-        like_count = result.count or 0
-
-    except Exception:
-
-        like_count = 0
-
-    # -----------------------------------------------------
-    # THỐNG KÊ BÌNH LUẬN
-    # -----------------------------------------------------
-
-    try:
-
-        result = (
-            supabase
-            .table("comments")
-            .select(
-                "id",
-                count="exact"
-            )
-            .execute()
-        )
-
-        comment_count = result.count or 0
-
-    except Exception:
-
-        comment_count = len(comments)
-
-    # -----------------------------------------------------
-    # BÀI CHỜ DUYỆT
-    # -----------------------------------------------------
-
-    pending_posts = [
-        post
-        for post in posts
-        if post.get("status") == "pending"
-    ]
-
-    # -----------------------------------------------------
-    # STATS
-    # -----------------------------------------------------
-
-    stats = {
-        "members": members,
-        "posts": post_count,
-        "likes": like_count,
-        "comments": comment_count,
-        "pending": len(pending_posts),
-    }
-
-    return render_template(
-        "admin.html",
-        users=users,
-        posts=posts,
-        pending_posts=pending_posts,
-        comments=comments,
-        stats=stats
-    )
-
-
-# =========================================================
-# KHÓA / MỞ TÀI KHOẢN
-# =========================================================
-
-@app.post("/admin/user/<int:user_id>/toggle")
-@login_required
-@admin_required
-def toggle_user(user_id):
-
-    if user_id == session.get("user_id"):
-
-        flash(
-            "Không thể khóa tài khoản đang đăng nhập.",
-            "error"
-        )
-
-        return redirect(url_for("admin"))
-
-    try:
-
-        result = (
-            supabase
-            .table("users")
-            .select("id,status,role")
-            .eq("id", user_id)
-            .limit(1)
-            .execute()
-        )
-
-        users = result.data or []
-
-        if not users:
-
-            flash(
-                "Không tìm thấy tài khoản.",
-                "error"
-            )
-
-            return redirect(url_for("admin"))
-
-        user = users[0]
-
-        if user.get("role") == "admin":
-
-            flash(
-                "Không thể khóa tài khoản quản trị.",
-                "error"
-            )
-
-            return redirect(url_for("admin"))
-
-        current_status = user.get(
-            "status",
-            "active"
-        )
-
-        if current_status == "locked":
-            new_status = "active"
-        else:
-            new_status = "locked"
-
-        supabase.table(
-            "users"
-        ).update({
-            "status": new_status
-        }).eq(
-            "id",
-            user_id
-        ).execute()
-
-        flash(
-            "Đã cập nhật trạng thái tài khoản.",
-            "success"
-        )
-
-    except Exception as error:
-
-        print("TOGGLE USER ERROR:", error)
-
-        flash(
-            "Không thể cập nhật tài khoản.",
-            "error"
-        )
-
-    return redirect(url_for("admin"))
-
-
-# =========================================================
-# XÓA TÀI KHOẢN
-# =========================================================
-
-@app.post("/admin/user/<int:user_id>/delete")
-@login_required
-@admin_required
-def delete_user(user_id):
-
-    if user_id == session.get("user_id"):
-
-        flash(
-            "Không thể xóa tài khoản đang đăng nhập.",
-            "error"
-        )
-
-        return redirect(url_for("admin"))
-
-    try:
-
-        result = (
-            supabase
-            .table("users")
-            .select("role")
-            .eq("id", user_id)
-            .limit(1)
-            .execute()
-        )
-
-        users = result.data or []
-
-        if users and users[0].get("role") == "admin":
-
-            flash(
-                "Không thể xóa tài khoản quản trị.",
-                "error"
-            )
-
-        else:
-
-            supabase.table(
-                "users"
-            ).delete().eq(
-                "id",
-                user_id
-            ).execute()
-
-            flash(
-                "Đã xóa tài khoản.",
-                "success"
-            )
-
-    except Exception as error:
-
-        print("DELETE USER ERROR:", error)
-
-        flash(
-            "Không thể xóa tài khoản.",
-            "error"
-        )
-
-    return redirect(url_for("admin"))
-
-
-# =========================================================
-# DUYỆT BÀI
-# =========================================================
-
-@app.post("/admin/post/<int:post_id>/approve")
-@login_required
-@admin_required
-def approve_post(post_id):
-
-    try:
-
-        supabase.table(
-            "posts"
-        ).update({
-            "status": "approved"
-        }).eq(
-            "id",
-            post_id
-        ).execute()
-
-        flash(
-            "Đã duyệt bài viết.",
-            "success"
-        )
-
-    except Exception as error:
-
-        print("APPROVE ERROR:", error)
-
-        flash(
-            "Không thể duyệt bài.",
-            "error"
-        )
-
-    return redirect(url_for("admin"))
-
-
-# =========================================================
-# TỪ CHỐI BÀI
-# =========================================================
-
-@app.post("/admin/post/<int:post_id>/reject")
-@login_required
-@admin_required
-def reject_post(post_id):
-
-    try:
-
-        supabase.table(
-            "posts"
-        ).update({
-            "status": "rejected"
-        }).eq(
-            "id",
-            post_id
-        ).execute()
-
-        flash(
-            "Đã từ chối bài viết.",
-            "success"
-        )
-
-    except Exception as error:
-
-        print("REJECT ERROR:", error)
-
-        flash(
-            "Không thể từ chối bài.",
-            "error"
-        )
-
-    return redirect(url_for("admin"))
-
-
-# =========================================================
-# XÓA BÀI
-# =========================================================
-
-@app.post("/admin/post/<int:post_id>/delete")
-@login_required
-@admin_required
-def delete_post(post_id):
-
-    try:
-
-        supabase.table(
-            "posts"
-        ).delete().eq(
-            "id",
-            post_id
-        ).execute()
-
-        flash(
-            "Đã xóa bài đăng.",
-            "success"
-        )
-
-    except Exception as error:
-
-        print("DELETE POST ERROR:", error)
-
-        flash(
-            "Không thể xóa bài đăng.",
-            "error"
-        )
-
-    return redirect(url_for("admin"))
-
-
-# =========================================================
-# XÓA BÌNH LUẬN - ADMIN
-# =========================================================
-
-@app.post("/admin/comment/<int:comment_id>/delete")
-@login_required
-@admin_required
-def delete_comment(comment_id):
-
-    try:
-
-        result = (
-            supabase
-            .table("comments")
-            .select("id")
-            .eq("id", comment_id)
-            .limit(1)
-            .execute()
-        )
-
-        comments = result.data or []
-
-        if not comments:
-
-            flash(
-                "Không tìm thấy bình luận.",
-                "error"
-            )
-
-            return redirect(url_for("admin"))
-
-        supabase.table(
-            "comments"
-        ).delete().eq(
-            "id",
-            comment_id
-        ).execute()
-
-        flash(
-            "Đã xóa bình luận.",
-            "success"
-        )
-
-    except Exception as error:
-
-        print("DELETE COMMENT ERROR:", error)
-
-        flash(
-            "Không thể xóa bình luận.",
-            "error"
-        )
-
-    return redirect(url_for("admin"))
-
-
-# =========================================================
-# HIỂN THỊ FILE UPLOAD
-# =========================================================
-
-@app.route("/uploads/<path:name>")
-def uploads(name):
-
-    return send_from_directory(
-        UPLOAD_DIR,
-        name
-    )
-
-
-# =========================================================
-# HEALTH CHECK
-# =========================================================
-
-@app.route("/health")
-def health():
-
-    try:
-
-        (
-            supabase
-            .table("users")
-            .select("id")
-            .limit(1)
-            .execute()
-        )
-
-        return {
-            "status": "ok",
-            "supabase": True
-        }
-
-    except Exception as error:
-
-        return {
-            "status": "error",
-            "supabase": False,
-            "message": str(error)
-        }, 500
-
-
-# =========================================================
-# LỖI 403
-# =========================================================
-
-@app.errorhandler(403)
-def forbidden(_):
-
-    return (
-        "Bạn không có quyền truy cập.",
-        403
-    )
-
-
-# =========================================================
-# LỖI 404
-# =========================================================
-
-@app.errorhandler(404)
-def not_found(_):
-
-    return (
-        "Không tìm thấy trang.",
-        404
-    )
-
-
-# =========================================================
-# CHẠY
-# =========================================================
-
-if __name__ == "__main__":
-
-    port = int(
-        os.environ.get(
-            "PORT",
-            5000
-        )
-    )
-
-    app.run(
-        host="0.0.0.0",
-        port=port
-    )
+            db.session.add(Loan(book_id=book.id,reader_id=reader.id,borrow_date=date.today(),due_date=date.today()+timedelta(days=14)))
+            book.quantity-=1
+            db.session.commit()
+            flash('Mượn nhanh thành công.','success')
+    return render_template('quick_borrow.html')
+
+@app.route('/quick-return', methods=['GET','POST'])
+def quick_return():
+    if not logged_in(): return redirect(url_for('login'))
+    if request.method=='POST':
+        code=request.form.get('code','').strip(); reader_code=request.form.get('reader_code','').strip(); q=Loan.query.join(Book).join(Reader).filter(Loan.status=='Đang mượn')
+        if code: q=q.filter(Book.code==code)
+        if reader_code: q=q.filter(Reader.code==reader_code)
+        l=q.order_by(Loan.id.asc()).first()
+        if not l: flash('Không tìm thấy phiếu mượn đang hoạt động.','error')
+        else: l.status='Đã trả'; l.return_date=date.today(); l.book.quantity+=1; db.session.commit(); award_return_points(l); flash('Trả nhanh thành công và cộng 20 điểm.','success')
+    return render_template('quick_return.html')
+
+@app.route('/shelves')
+def shelves():
+    if not logged_in(): return redirect(url_for('login'))
+    return render_template('shelves.html',shelves=Shelf.query.order_by(Shelf.code).all())
+
+@app.route('/shelves/add', methods=['GET','POST'])
+def add_shelf():
+    if not logged_in(): return redirect(url_for('login'))
+    if request.method=='POST':
+        try: db.session.add(Shelf(code=request.form['code'].strip(),name=request.form['name'].strip(),zone=request.form.get('zone'),note=request.form.get('note'))); db.session.commit(); flash('Đã thêm kệ.','success'); return redirect(url_for('shelves'))
+        except Exception as e: db.session.rollback(); flash(f'Lỗi: {e}','error')
+    return render_template('shelf_form.html',shelf=None)
+
+@app.route('/shelves/edit/<int:shelf_id>', methods=['GET','POST'])
+def edit_shelf(shelf_id):
+    if not logged_in(): return redirect(url_for('login'))
+    s=Shelf.query.get_or_404(shelf_id)
+    if request.method=='POST':
+        try: s.code=request.form['code'].strip(); s.name=request.form['name'].strip(); s.zone=request.form.get('zone'); s.note=request.form.get('note'); db.session.commit(); flash('Đã cập nhật kệ.','success'); return redirect(url_for('shelves'))
+        except Exception as e: db.session.rollback(); flash(f'Lỗi: {e}','error')
+    return render_template('shelf_form.html',shelf=s)
+
+@app.route('/shelves/delete/<int:shelf_id>', methods=['POST'])
+def delete_shelf(shelf_id):
+    if not logged_in(): return redirect(url_for('login'))
+    s=Shelf.query.get_or_404(shelf_id); db.session.delete(s); db.session.commit(); flash('Đã xóa kệ.','success'); return redirect(url_for('shelves'))
+
+@app.route('/classes')
+def classes():
+    if not logged_in(): return redirect(url_for('login'))
+    names=[x[0] for x in db.session.query(Reader.class_name).filter(Reader.class_name.isnot(None),Reader.class_name!='').distinct().order_by(Reader.class_name).all()]
+    data=[]
+    for name in names:
+        rs=Reader.query.filter_by(class_name=name).all(); data.append({'name':name,'readers':len(rs),'books':sum(books_read(r.id) for r in rs),'points':sum(total_reading_points(r.id) for r in rs)})
+    return render_template('classes.html',classes=data)
+
+@app.route('/reports')
+def reports():
+    if not logged_in(): return redirect(url_for('login'))
+    return render_template('reports.html',total_books=Book.query.count(),copies=sum(b.quantity for b in Book.query.all()),readers=Reader.query.count(),loans=Loan.query.count(),active=Loan.query.filter_by(status='Đang mượn').count(),overdue=Loan.query.filter(Loan.status=='Đang mượn',Loan.due_date<date.today()).count(),points=db.session.query(db.func.coalesce(db.func.sum(ReadingPointsLog.points),0)).scalar() or 0)
+
+@app.route('/reading-culture')
+def reading_culture():
+    if not logged_in(): return redirect(url_for('login'))
+    cls=request.args.get('class','').strip(); query=Reader.query
+    if cls: query=query.filter_by(class_name=cls)
+    rows=[]
+    for r in query.all():
+        rows.append({'reader':r,'books':books_read(r.id),'points':total_reading_points(r.id),'badges':Badge.query.filter_by(reader_id=r.id).count()})
+    rows.sort(key=lambda x:(-x['points'],-x['books'],x['reader'].name.lower()))
+    for i,row in enumerate(rows,1): row['rank']=i
+    return render_template('reading_culture.html',rows=rows,classes=class_names(),selected_class=cls)
+
+@app.route('/reading/activities/add', methods=['POST'])
+def add_activity():
+    if not logged_in(): return redirect(url_for('reading_culture'))
+    reader=Reader.query.get_or_404(int(request.form['reader_id']))
+    typ=request.form.get('activity_type') or 'Khác'
+    pts=max(0,int(request.form.get('points') or ACTIVITY_POINTS.get(typ,5)))
+    status='Đã duyệt' if session.get('role')=='admin' else 'Chờ duyệt'
+    db.session.add(ReadingActivity(reader_id=reader.id,activity_type=typ,title=request.form['title'].strip(),description=request.form.get('description'),points=pts,status=status))
+    db.session.commit()
+    flash('Đã ghi nhận hoạt động Văn hóa Đọc.' + (' Chờ duyệt.' if status=='Chờ duyệt' else ''),'success')
+    return redirect(url_for('reading_profile',reader_id=reader.id))
+
+@app.route('/reading/activities/<int:activity_id>/approve', methods=['POST'])
+def approve_activity(activity_id):
+    if not logged_in() or session.get('role')!='admin': abort(403)
+    a=ReadingActivity.query.get_or_404(activity_id); a.status='Đã duyệt'; db.session.commit(); flash('Đã duyệt hoạt động.','success'); return redirect(url_for('reading_profile',reader_id=a.reader_id))
+
+@app.route('/reading/activities/<int:activity_id>/reject', methods=['POST'])
+def reject_activity(activity_id):
+    if not logged_in() or session.get('role')!='admin': abort(403)
+    a=ReadingActivity.query.get_or_404(activity_id); a.status='Từ chối'; db.session.commit(); flash('Đã từ chối hoạt động.','success'); return redirect(url_for('reading_profile',reader_id=a.reader_id))
+
+@app.route('/reading/rewards/add', methods=['POST'])
+def add_reward():
+    if not logged_in(): return redirect(url_for('reading_culture'))
+    reader=Reader.query.get_or_404(int(request.form['reader_id'])); db.session.add(Reward(reader_id=reader.id,title=request.form['title'].strip(),description=request.form.get('description'),points=int(request.form.get('points') or 0))); db.session.commit(); flash('Đã ghi nhận khen thưởng.','success'); return redirect(url_for('reading_profile',reader_id=reader.id))
+
+
+@app.route('/reports/export')
+def reports_export():
+    if not logged_in(): return redirect(url_for('login'))
+    wb=Workbook(); ws=wb.active; ws.title='Tong quan'
+    ws.append(['Chỉ tiêu','Giá trị'])
+    ws.append(['Đầu sách',Book.query.count()]); ws.append(['Tổng bản sách',sum(b.quantity for b in Book.query.all())])
+    ws.append(['Bạn đọc',Reader.query.count()]); ws.append(['Phiếu mượn',Loan.query.count()]); ws.append(['Đang mượn',Loan.query.filter_by(status='Đang mượn').count()])
+    ws.append(['Quá hạn',Loan.query.filter(Loan.status=='Đang mượn',Loan.due_date<date.today()).count()])
+    ws.append(['Điểm Văn hóa Đọc',sum(total_reading_points(r.id) for r in Reader.query.all())])
+    out=BytesIO(); wb.save(out); out.seek(0)
+    return send_file(out,as_attachment=True,download_name='bao_cao_thu_vien.xlsx',mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@app.route('/classes/export')
+def classes_export():
+    if not logged_in(): return redirect(url_for('login'))
+    names=[x[0] for x in db.session.query(Reader.class_name).filter(Reader.class_name.isnot(None),Reader.class_name!='').distinct().order_by(Reader.class_name).all()]
+    wb=Workbook(); ws=wb.active; ws.title='Theo lop'; ws.append(['Lớp','Bạn đọc','Lượt đọc','Điểm'])
+    for name in names:
+        rs=Reader.query.filter_by(class_name=name).all(); ws.append([name,len(rs),sum(books_read(r.id) for r in rs),sum(total_reading_points(r.id) for r in rs)])
+    out=BytesIO(); wb.save(out); out.seek(0)
+    return send_file(out,as_attachment=True,download_name='bao_cao_lop.xlsx',mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@app.route('/books/<int:book_id>/history')
+def book_history(book_id):
+    if not logged_in(): return redirect(url_for('login'))
+    b=Book.query.get_or_404(book_id)
+    return render_template('book_history.html',book=b,loans=Loan.query.filter_by(book_id=b.id).order_by(Loan.id.desc()).all())
+
+if __name__ == '__main__':
+    print('Website QUẢN LÍ THƯ VIỆN đang chạy')
+    app.run(host='0.0.0.0',port=int(os.environ.get('PORT',5000)),debug=False)
